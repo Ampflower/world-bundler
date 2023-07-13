@@ -14,4 +14,7 @@ public interface RegionHandler {
 	Region readRegion(InputStream stream) throws IOException;
 
 	void writeRegion(OutputStream stream, Region region) throws IOException;
+	default void writeRegion(OutputStream stream, Region region, ChunkWriter chunkWriter) throws IOException {
+		writeRegion(stream, region);
+	}
 }

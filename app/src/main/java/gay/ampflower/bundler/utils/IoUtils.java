@@ -75,7 +75,7 @@ public final class IoUtils {
 			written += end;
 		}
 
-		final int sec = McRegionHandler.INSTANCE.sectors(written);
+		final int sec = McRegionHandler.sectors(written);
 		s += sec;
 		logger.info("Written {} (~{} sectors), {} total", written, sec, s);
 	}
