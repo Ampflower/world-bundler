@@ -1,11 +1,10 @@
 package gay.ampflower.bundler.world;
 
-import gay.ampflower.bundler.utils.IoUtils;
+import gay.ampflower.bundler.utils.ArrayUtils;
 import gay.ampflower.bundler.utils.LimitedInputStream;
 import gay.ampflower.bundler.utils.LogUtils;
 import gay.ampflower.bundler.world.io.RegionHandler;
 import org.apache.commons.compress.compressors.zstandard.ZstdCompressorInputStream;
-import org.apache.commons.compress.compressors.zstandard.ZstdUtils;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -14,7 +13,6 @@ import java.io.OutputStream;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
-import java.util.Arrays;
 import java.util.Set;
 
 /**
@@ -56,7 +54,7 @@ public class LinearHandler implements RegionHandler {
 				throw new IOException("Expected " + metaSize * 4 + ", got " + read);
 			}
 			// read += IoUtils.readMin(zstdStream, buf, read, metaSize * 4, read - HEADER_LENGTH);
-			IoUtils.copy(buf, 0, chunkMeta, 0, metaSize, ByteOrder.BIG_ENDIAN);
+			ArrayUtils.copy(buf, 0, chunkMeta, 0, metaSize, ByteOrder.BIG_ENDIAN);
 
 			int chunkCount = 0;
 

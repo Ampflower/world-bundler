@@ -1,13 +1,15 @@
 package gay.ampflower.bundler.utils;
 
+import gay.ampflower.bundler.world.McRegionHandler;
+
 /**
  * @author Ampflower
  * @since ${version}
  **/
 public enum LevelCompressor {
-	NONE(0),
-	GZIP(1),
-	ZLIB(2),
+	NONE(McRegionHandler.COMPRESSION_NONE),
+	GZIP(McRegionHandler.COMPRESSION_GZIP),
+	ZLIB(McRegionHandler.COMPRESSION_ZLIB),
 	ZSTD(-1),
 	;
 

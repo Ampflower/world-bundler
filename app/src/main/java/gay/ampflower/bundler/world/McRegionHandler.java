@@ -41,9 +41,10 @@ public final class McRegionHandler implements RegionHandler {
 	private static final int MAX_SECTORS = 255;
 	private static final int CHUNK_CUTOFF = SECTOR * MAX_SECTORS;
 
-	private static final byte COMPRESSION_GZIP = 0x01;
-	private static final byte COMPRESSION_ZLIB = 0x02;
-	private static final byte COMPRESSION_NONE = 0x03;
+	// Fun fact: 0x00 is unused.
+	public static final byte COMPRESSION_GZIP = 0x01;
+	public static final byte COMPRESSION_ZLIB = 0x02;
+	public static final byte COMPRESSION_NONE = 0x03;
 
 	private static final byte COMPRESSION_FLAG_EXTERN = -0x80;
 

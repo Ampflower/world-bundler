@@ -7,8 +7,6 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.invoke.MethodHandles;
-import java.nio.ByteOrder;
 import java.util.Arrays;
 
 /**
@@ -18,8 +16,6 @@ import java.util.Arrays;
 public final class IoUtils {
 	private static final Logger logger = LogUtils.logger();
 	private static int s = 0;
-
-	public static final int SHORT_STRIDE = 2, INT_STRIDE = 4, LONG_STRIDE = 8;
 
 	public static int readMin(InputStream stream, byte[] buf, int off, int minLen) throws IOException {
 		int read, count = 0, len = buf.length - off;
@@ -80,12 +76,13 @@ public final class IoUtils {
 		logger.info("Written {} (~{} sectors), {} total", written, sec, s);
 	}
 
-	public static void copy(byte[] read, int roff, int[] write, int woff, int len, ByteOrder order) {
-		final var handle = MethodHandles.byteArrayViewVarHandle(int[].class, order);
+	public static int[] readBigEndian(InputStream stream, byte[] buf) throws IOException {
+		if((buf.length & 3) != 0) throw new IllegalArgumentException();
+		if(stream.readNBytes(buf, 0, buf.length) != buf.length) throw new IOException("Incomplete read");
 
-		for(int i = 0; i < len; i++) {
-			write[woff + i] = (int)handle.get(read, roff + i * INT_STRIDE);
-		}
+		final var output = new int[buf.length >> 2];
+		ArrayUtils.copyBigEndianInts(buf, output);
+		return output;
 	}
 
 	// A very dumb check; it doesn't try to parse it.
