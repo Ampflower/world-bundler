@@ -149,6 +149,8 @@ public final class McRegionHandler implements RegionHandler {
 			}
 		}
 
+		deflater.end();
+
 		return write;
 	}
 
