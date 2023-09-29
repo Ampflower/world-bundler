@@ -30,11 +30,11 @@ public final class App {
 		final Region region;
 
 		try (final var stream = Files.newInputStream(regionIn)) {
-			region = LinearHandler.INSTANCE.readRegion(stream);
+			region = McRegionHandler.INSTANCE.readRegion(stream);
 		}
 
 		try (final var stream = Files.newOutputStream(regionOut, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
-			McRegionHandler.INSTANCE.writeRegion(stream, region);
+			LinearHandler.INSTANCE.writeRegion(stream, region);
 		}
 
 		if(true) {

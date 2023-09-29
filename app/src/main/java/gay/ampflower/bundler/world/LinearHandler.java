@@ -1,6 +1,8 @@
 package gay.ampflower.bundler.world;
 
+import com.github.luben.zstd.Zstd;
 import gay.ampflower.bundler.utils.ArrayUtils;
+import gay.ampflower.bundler.utils.LevelCompressor;
 import gay.ampflower.bundler.utils.LimitedInputStream;
 import gay.ampflower.bundler.utils.LogUtils;
 import gay.ampflower.bundler.world.io.RegionHandler;
@@ -30,8 +32,9 @@ public class LinearHandler implements RegionHandler {
 	private static final VarHandle LONG_HANDLE = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.BIG_ENDIAN);
 
 	private static final long LINEAR_SIGNATURE = 0xC3FF13183CCA9D9AL;
+	private static final byte LINEAR_VERSION = 1;
 	// Supported versions.
-	private static final Set<Byte> LINEAR_VERSIONS = Set.of((byte)1, (byte)2);
+	private static final Set<Byte> LINEAR_VERSIONS = Set.of((byte) 1, (byte) 2);
 	private static final int HEADER_LENGTH = 32;
 
 
@@ -131,7 +134,56 @@ public class LinearHandler implements RegionHandler {
 	}
 
 	public void writeRegion(OutputStream stream, Region region) throws IOException {
-		;
+		final int compressionLevel = Zstd.maxCompressionLevel();
+
+		final var chunks = writeChunks(region);
+
+		final var header = new Header(
+			LINEAR_SIGNATURE,
+			LINEAR_VERSION,
+			ArrayUtils.max(region.timestamps()),
+			(byte) compressionLevel,
+			(short) chunks.count(),
+			chunks.array().length,
+			0L
+		);
+
+		var array = header.toBytes();
+
+		stream.write(array);
+		stream.write(chunks.array());
+		stream.write(array, 0, ArrayUtils.LONG_STRIDE);
+	}
+
+	private Chunks writeChunks(Region region) throws IOException {
+		final int[] chunkMeta = new int[Region.CHUNK_COUNT * 2];
+
+		int size = 0, count = 0;
+
+		for (int i = 0; i < Region.CHUNK_COUNT; i++) {
+			int metaIndex = i * 2;
+
+			var chunk = region.chunks()[i];
+			if (chunk == null || chunk.length == 0) {
+				continue;
+			}
+
+			count++;
+			size += chunkMeta[metaIndex] = chunk.length;
+			chunkMeta[metaIndex + 1] = region.timestamps()[i];
+		}
+
+		int offset = chunkMeta.length * ArrayUtils.INT_STRIDE;
+		final byte[] bytes = new byte[size + offset];
+		ArrayUtils.copy(chunkMeta, 0, bytes, 0, chunkMeta.length, ByteOrder.BIG_ENDIAN);
+
+		for (var chunk : region.chunks()) {
+			if (chunk == null || chunk.length == 0) continue;
+			System.arraycopy(chunk, 0, bytes, offset, chunk.length);
+			offset += chunk.length;
+		}
+
+		return new Chunks(count, LevelCompressor.ZSTD.deflate(bytes));
 	}
 
 	private final int[] chunkSizes = new int[Region.CHUNK_COUNT];
@@ -149,14 +201,26 @@ public class LinearHandler implements RegionHandler {
 	) {
 		private Header(byte[] bytes) {
 			this(
-				(long)LONG_HANDLE.get(bytes, 0),
+				(long) LONG_HANDLE.get(bytes, 0),
 				bytes[8],
-				(long)LONG_HANDLE.get(bytes, 9),
+				(long) LONG_HANDLE.get(bytes, 9),
 				bytes[17],
-				(short)SHORT_HANDLE.get(bytes, 18),
-				(int)INT_HANDLE.get(bytes, 20),
-				(long)LONG_HANDLE.get(bytes, 24)
+				(short) SHORT_HANDLE.get(bytes, 18),
+				(int) INT_HANDLE.get(bytes, 20),
+				(long) LONG_HANDLE.get(bytes, 24)
 			);
+		}
+
+		public byte[] toBytes() {
+			final var bytes = new byte[32];
+			LONG_HANDLE.set(bytes, 0, signature);
+			bytes[8] = version;
+			LONG_HANDLE.set(bytes, 9, newestTimestamp);
+			bytes[17] = compressionLevel;
+			SHORT_HANDLE.set(bytes, 18, chunkCount);
+			INT_HANDLE.set(bytes, 20, completeRegionLength);
+			LONG_HANDLE.set(bytes, 24, completeChunkHash);
+			return bytes;
 		}
 	}
 
@@ -171,12 +235,18 @@ public class LinearHandler implements RegionHandler {
 	private record ChunkEntry (
 		int size,
 		int timestamp
-	){
+	) {
 		private ChunkEntry(byte[] bytes, int offset) {
 			this(
-				(int)INT_HANDLE.get(bytes, offset),
-				(int)INT_HANDLE.get(bytes, offset + 4)
+				(int) INT_HANDLE.get(bytes, offset),
+				(int) INT_HANDLE.get(bytes, offset + 4)
 			);
 		}
+	}
+
+	private record Chunks(
+		int count,
+		byte[] array
+	) {
 	}
 }

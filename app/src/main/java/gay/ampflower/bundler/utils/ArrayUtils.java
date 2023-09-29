@@ -31,14 +31,32 @@ public final class ArrayUtils {
 	public static void copy(byte[] read, int roff, int[] write, int woff, int len, ByteOrder order) {
 		final var handle = MethodHandles.byteArrayViewVarHandle(int[].class, order);
 
-		for(int i = 0; i < len; i++) {
-			write[woff + i] = (int)handle.get(read, roff + i * INT_STRIDE);
+		for (int i = 0; i < len; i++) {
+			write[woff + i] = (int) handle.get(read, roff + i * INT_STRIDE);
+		}
+	}
+
+	public static void copy(int[] read, int roff, byte[] write, int woff, int len, ByteOrder order) {
+		final var handle = MethodHandles.byteArrayViewVarHandle(int[].class, order);
+
+		for (int i = 0; i < len; i++) {
+			handle.set(write, woff + i * INT_STRIDE, read[roff + i]);
 		}
 	}
 
 	public static void copyBigEndianInts(byte[] from, int[] to) {
-		for(int i = 0; i < to.length; i++) {
+		for (int i = 0; i < to.length; i++) {
 			to[i] = (int) INTS_BIG_ENDIAN.get(from, i << 2);
 		}
+	}
+
+	public static int max(final int[] ints) {
+		int max = ints[0];
+
+		for (int i = 1; i < ints.length; i++) {
+			max = Math.max(max, ints[i]);
+		}
+
+		return max;
 	}
 }
