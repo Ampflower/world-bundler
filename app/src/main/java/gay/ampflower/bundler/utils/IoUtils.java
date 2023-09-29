@@ -86,15 +86,15 @@ public final class IoUtils {
 	}
 
 	// A very dumb check; it doesn't try to parse it.
-	public static void verifyNbt(byte[] nbt) {
-		if(nbt[0] != 0x0A) {
-			throw new AssertionError("Invalid start of NBT: " + nbt[0]);
+	public static void verifyNbt(byte[] nbt, int chunk) {
+		if (nbt[0] != 0x0A) {
+			throw new AssertionError("Invalid start of NBT @ " + chunk + ": " + nbt[0]);
 		}
-		if(nbt[nbt.length - 1] != 0x00) {
-			throw new AssertionError("Invalid end of NBT: " + nbt[nbt.length - 1]);
+		if (nbt[nbt.length - 1] != 0x00) {
+			throw new AssertionError("Invalid end of NBT @ " + chunk + ": " + nbt[nbt.length - 1]);
 		}
-		if((nbt[1] | nbt[2]) != 0) {
-			logger.warn("Possible corruption: Non-zero name length");
+		if ((nbt[1] | nbt[2]) != 0) {
+			logger.warn("Possible corruption: Non-zero name length at chunk {}", chunk);
 		}
 	}
 }

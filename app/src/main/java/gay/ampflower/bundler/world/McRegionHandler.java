@@ -1,11 +1,10 @@
 package gay.ampflower.bundler.world;
 
 import gay.ampflower.bundler.utils.IoUtils;
+import gay.ampflower.bundler.utils.LevelCompressor;
 import gay.ampflower.bundler.utils.LogUtils;
-import gay.ampflower.bundler.world.io.ChunkWriter;
-import gay.ampflower.bundler.world.io.RegionHandler;
-import gay.ampflower.bundler.world.io.RegionReader;
-import gay.ampflower.bundler.world.io.RegionWriter;
+import gay.ampflower.bundler.world.io.*;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import org.slf4j.Logger;
 
 import javax.annotation.CheckReturnValue;
@@ -50,7 +49,93 @@ public final class McRegionHandler implements RegionHandler {
 
 	@Override
 	public Region readRegion(final InputStream stream) throws IOException {
-		return null;
+		return this.readRegion(stream, new ChunkReader.McLogger());
+	}
+
+	@Override
+	public Region readRegion(final InputStream stream, final ChunkReader chunkReader) throws IOException {
+		int sectorOffset = INITIAL_SECTOR_OFFSET;
+		final var buf = new byte[SECTOR];
+
+		final var entries = readFirstSector(stream, buf);
+
+		int l = 0;
+
+		final var set = new IntOpenHashSet(Region.CHUNK_COUNT);
+
+		for (int i = 0; i < Region.CHUNK_COUNT; i++) {
+			final var entry = entries[i];
+			if (entry == FirstSectorEntry.SENTINEL) {
+				continue;
+			}
+			if (entry.offset == 1) {
+				logger.info("Legacy McRegion detected; timestamps won't be saved.");
+				sectorOffset = 1;
+			}
+			if (!set.add(entry.offset)) {
+				logger.warn("Corrupted chunk entry {}: {}", i, entry);
+			}
+			l = Math.max(entry.offset + entry.sectors, l);
+		}
+		if (l <= sectorOffset) {
+			return null;
+		}
+
+		final int[] timestamps;
+
+		if (sectorOffset == INITIAL_SECTOR_OFFSET) {
+			timestamps = IoUtils.readBigEndian(stream, buf);
+		} else {
+			timestamps = new int[Region.CHUNK_COUNT];
+		}
+
+		final var chunks = new byte[Region.CHUNK_COUNT][];
+		final var bytes = stream.readNBytes((l - sectorOffset) * SECTOR);
+
+		for (int i = 0; i < Region.CHUNK_COUNT; i++) {
+			final var entry = entries[i];
+			if (entry == FirstSectorEntry.SENTINEL) {
+				continue;
+			}
+
+			int offset = (entry.offset() - sectorOffset) * SECTOR;
+			int size = (int) INT_HANDLE.get(bytes, offset) - 1;
+
+			int compressorId = bytes[offset + 4];
+			var compressor = LevelCompressor.getMcRegionCompressor(compressorId & 0x7F);
+
+			if (compressor == null) {
+				logger.warn("Corrupted chunk {}; Invalid compressor: {}", i, compressorId & 0x7F);
+				continue;
+			}
+
+			if (compressorId < 0) {
+				chunks[i] = chunkReader.readChunk(i, compressor);
+				if (size != 0 && chunks[i] != null) logger.warn("Corrupted chunk {}; found size {}", i, size);
+				if (chunks[i] != null) {
+					IoUtils.verifyNbt(chunks[i], i);
+				}
+			} else if (size == 0) {
+				logger.warn("Corrupted chunk {}; zero-size with compressor {}", i, compressorId & 0xFF);
+			} else {
+				chunks[i] = compressor.inflate(bytes, offset + 5, size);
+				IoUtils.verifyNbt(chunks[i], i);
+			}
+		}
+
+		return new Region(timestamps, chunks);
+	}
+
+	private static FirstSectorEntry[] readFirstSector(final InputStream stream, final byte[] buf) throws IOException {
+		final int[] offsets = IoUtils.readBigEndian(stream, buf);
+
+		final var entries = new FirstSectorEntry[Region.CHUNK_COUNT];
+
+		for (int i = 0; i < Region.CHUNK_COUNT; i++) {
+			entries[i] = FirstSectorEntry.of(offsets[i], i);
+		}
+
+		return entries;
 	}
 
 	@Override
@@ -119,7 +204,7 @@ public final class McRegionHandler implements RegionHandler {
 		for(int i = 0; i < Region.CHUNK_COUNT; i++) {
 			final var chunk = region.chunks()[i];
 			if(chunk != null) {
-				IoUtils.verifyNbt(chunk);
+				IoUtils.verifyNbt(chunk, i);
 				deflater.setInput(chunk);
 				deflater.finish();
 				final var toWrite = new byte[sectors(chunk.length) * SECTOR];
@@ -168,13 +253,33 @@ public final class McRegionHandler implements RegionHandler {
 	}
 
 
+	private record FirstSectorEntry(int offset, int sectors) {
+		private static FirstSectorEntry of(int upper, int pos) {
+			if (upper == 0) {
+				return SENTINEL;
+			}
+
+			final int offset = upper >>> 8;
+			final int sectors = upper & BYTE_MASK;
+
+			if (sectors == 0 || offset == 0) {
+				logger.warn("Corrupted entry (offset: {}, sectors: {}) {}", offset, sectors, pos);
+				return SENTINEL;
+			}
+
+			return new FirstSectorEntry(upper >>> 8, upper & BYTE_MASK);
+		}
+
+		private static final FirstSectorEntry SENTINEL = new FirstSectorEntry(0, 0);
+	}
+
 	private record ChunkEntry(int offset, int sectors, int timestamp) {
 		public ChunkEntry(int upper, int lower) {
 			this(upper >>> 8, upper & BYTE_MASK, lower);
 		}
 
 		int toUpper() {
-			if(sectors < 0) {
+			if (sectors < 0) {
 				return (offset << 8) | 1;
 			}
 			return (offset << 8) | sectors;

@@ -13,7 +13,12 @@ import java.io.OutputStream;
 public interface RegionHandler {
 	Region readRegion(InputStream stream) throws IOException;
 
+	default Region readRegion(InputStream stream, ChunkReader chunkReader) throws IOException {
+		return readRegion(stream);
+	}
+
 	void writeRegion(OutputStream stream, Region region) throws IOException;
+
 	default void writeRegion(OutputStream stream, Region region, ChunkWriter chunkWriter) throws IOException {
 		writeRegion(stream, region);
 	}
