@@ -1,5 +1,6 @@
 package gay.ampflower.bundler.world;
 
+import gay.ampflower.bundler.utils.ArrayUtils;
 import gay.ampflower.bundler.utils.IoUtils;
 import gay.ampflower.bundler.utils.LevelCompressor;
 import gay.ampflower.bundler.utils.LogUtils;
@@ -11,9 +12,7 @@ import javax.annotation.CheckReturnValue;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.zip.Deflater;
 
@@ -27,7 +26,7 @@ public final class McRegionHandler implements RegionHandler {
 	public static final McRegionHandler INSTANCE = new McRegionHandler();
 
 	// BE is used for McRegion.
-	private static final VarHandle INT_HANDLE = MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.BIG_ENDIAN);
+	private static final VarHandle INT_HANDLE = ArrayUtils.INTS_BIG_ENDIAN;
 
 	private static final int BYTE_MASK = 0xFF;
 	private static final int SECTOR = 4096;

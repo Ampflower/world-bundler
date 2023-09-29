@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.Set;
@@ -27,9 +26,9 @@ public class LinearHandler implements RegionHandler {
 	public static final LinearHandler INSTANCE = new LinearHandler();
 
 	// Linear uses Big Endian
-	private static final VarHandle SHORT_HANDLE = MethodHandles.byteArrayViewVarHandle(short[].class, ByteOrder.BIG_ENDIAN);
-	private static final VarHandle INT_HANDLE = MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.BIG_ENDIAN);
-	private static final VarHandle LONG_HANDLE = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.BIG_ENDIAN);
+	private static final VarHandle SHORT_HANDLE = ArrayUtils.SHORTS_BIG_ENDIAN;
+	private static final VarHandle INT_HANDLE = ArrayUtils.INTS_BIG_ENDIAN;
+	private static final VarHandle LONG_HANDLE = ArrayUtils.LONGS_BIG_ENDIAN;
 
 	private static final long LINEAR_SIGNATURE = 0xC3FF13183CCA9D9AL;
 	private static final byte LINEAR_VERSION = 1;
@@ -185,8 +184,6 @@ public class LinearHandler implements RegionHandler {
 
 		return new Chunks(count, LevelCompressor.ZSTD.deflate(bytes));
 	}
-
-	private final int[] chunkSizes = new int[Region.CHUNK_COUNT];
 
 	private record Header(
 		long signature,
