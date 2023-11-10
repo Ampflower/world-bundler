@@ -4,12 +4,14 @@ import gay.ampflower.bundler.utils.LevelCompressor;
 import gay.ampflower.bundler.utils.LogUtils;
 import org.slf4j.Logger;
 
+import java.io.IOException;
+
 /**
  * @author Ampflower
  * @since ${version}
  **/
 public interface ChunkReader {
-	byte[] readChunk(int i, LevelCompressor compressor);
+	byte[] readChunk(int i, LevelCompressor compressor) throws IOException;
 
 
 	public final class McLogger implements ChunkReader {

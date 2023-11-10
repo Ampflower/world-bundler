@@ -4,7 +4,9 @@ import gay.ampflower.bundler.utils.ArrayUtils;
 import gay.ampflower.bundler.utils.IoUtils;
 import gay.ampflower.bundler.utils.LevelCompressor;
 import gay.ampflower.bundler.utils.LogUtils;
-import gay.ampflower.bundler.world.io.*;
+import gay.ampflower.bundler.world.io.ChunkReader;
+import gay.ampflower.bundler.world.io.ChunkWriter;
+import gay.ampflower.bundler.world.io.RegionHandler;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import org.slf4j.Logger;
 
@@ -237,20 +239,6 @@ public final class McRegionHandler implements RegionHandler {
 
 		return write;
 	}
-
-	public final class Reader implements RegionReader {
-		private final ChunkEntry[] entries = new ChunkEntry[1024];
-	}
-
-	public final class Writer implements RegionWriter {
-		private final ChunkEntry[] entries = new ChunkEntry[1024];
-
-		@Override
-		public ChunkWriter nextChunk() {
-			return null;
-		}
-	}
-
 
 	private record FirstSectorEntry(int offset, int sectors) {
 		private static FirstSectorEntry of(int upper, int pos) {

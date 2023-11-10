@@ -33,6 +33,21 @@ public enum LevelCompressor {
 		}
 
 		@Override
+		public boolean compatible(final PushbackInputStream stream) {
+			return true;
+		}
+
+		@Override
+		public boolean compatible(final byte[] array) {
+			return true;
+		}
+
+		@Override
+		public boolean isCompressor() {
+			return false;
+		}
+
+		@Override
 		public byte[] deflate(final byte[] array) {
 			return array;
 		}
@@ -62,6 +77,20 @@ public enum LevelCompressor {
 		public InputStream inflater(final InputStream stream) throws IOException {
 			return new GZIPInputStream(stream);
 		}
+
+		@Override
+		public boolean compatible(final PushbackInputStream stream) throws IOException {
+			final var array = stream.readNBytes(2);
+			stream.unread(array);
+
+			return compatible(array);
+		}
+
+		@Override
+		public boolean compatible(final byte[] array) {
+			// Common GZip Header
+			return array.length >= 2 && array[0] == 0x1F && array[1] == (byte) 0x8B;
+		}
 	},
 	ZLIB(McRegionHandler.COMPRESSION_ZLIB) {
 		@Override
@@ -73,6 +102,26 @@ public enum LevelCompressor {
 		public InputStream inflater(final InputStream stream) {
 			return new InflaterInputStream(stream);
 		}
+
+		@Override
+		public boolean compatible(final PushbackInputStream stream) throws IOException {
+			final var array = stream.readNBytes(2);
+			stream.unread(array);
+
+			return compatible(array);
+		}
+
+		@Override
+		public boolean compatible(final byte[] array) {
+			if (array.length < 2) {
+				return false;
+			}
+
+			final int value = (char) ArrayUtils.CHARS_BIG_ENDIAN.get(array, 0);
+
+			// Check for compressor == 8 and FDICT == 0
+			return (value & 0x0F20) == 0x0800 && value % 31 == 0;
+		}
 	},
 	ZSTD(-1) {
 		@Override
@@ -83,6 +132,25 @@ public enum LevelCompressor {
 		@Override
 		public InputStream inflater(final InputStream stream) throws IOException {
 			return new ZstdInputStream(stream);
+		}
+
+		@Override
+		public boolean compatible(final PushbackInputStream stream) throws IOException {
+			final var array = stream.readNBytes(4);
+			stream.unread(array);
+
+			return compatible(array);
+		}
+
+		@Override
+		public boolean compatible(final byte[] array) {
+			if (array.length < 4) {
+				return false;
+			}
+
+			final int value = (int) ArrayUtils.INTS_BIG_ENDIAN.get(array, 0);
+
+			return value == 0xFD2FB528;
 		}
 
 		@Override
@@ -110,14 +178,24 @@ public enum LevelCompressor {
 
 	private static final Logger logger = LogUtils.logger();
 	private static final Int2ObjectMap<LevelCompressor> mcRegionCompressors;
+	private static final LevelCompressor[] fileCompressors;
 
 	static {
+		final var self = values();
+		final var fc = new LevelCompressor[self.length];
+		int fci = 0;
 		final var mrc = new Int2ObjectArrayMap<LevelCompressor>();
-		for (var compressor : values()) {
+
+		for (var compressor : self) {
+			if (compressor.isCompressor()) {
+				fc[fci++] = compressor;
+			}
+
 			if (compressor.MCREGION_TYPE < 0) continue;
 			mrc.put(compressor.MCREGION_TYPE, compressor);
 		}
 		mcRegionCompressors = Int2ObjectMaps.unmodifiable(mrc);
+		fileCompressors = fc;
 	}
 
 	public final byte MCREGION_TYPE;
@@ -131,9 +209,38 @@ public enum LevelCompressor {
 		return mcRegionCompressors.get(compressor);
 	}
 
+	public static LevelCompressor getFileCompressor(PushbackInputStream stream) throws IOException {
+		final var array = stream.readNBytes(8);
+		stream.unread(array);
+
+		return getFileCompressor(array);
+	}
+
+	public static LevelCompressor getFileCompressor(byte[] array) {
+		for (final var compressor : fileCompressors) {
+			if (compressor.compatible(array)) {
+				return compressor;
+			}
+		}
+
+		return NONE;
+	}
+
+	public static byte[] tryDecompress(byte[] array) throws IOException {
+		return getFileCompressor(array).inflate(array);
+	}
+
 	public abstract OutputStream deflater(OutputStream stream) throws IOException;
 
 	public abstract InputStream inflater(InputStream stream) throws IOException;
+
+	public abstract boolean compatible(PushbackInputStream stream) throws IOException;
+
+	public abstract boolean compatible(byte[] array);
+
+	public boolean isCompressor() {
+		return true;
+	}
 
 	public byte[] deflate(byte[] array) throws IOException {
 		return this.deflate(array, 0, array.length);
