@@ -1,6 +1,7 @@
 package gay.ampflower.bundler.world;
 
 import gay.ampflower.bundler.utils.LevelCompressor;
+import gay.ampflower.bundler.utils.LongTransiterator;
 import gay.ampflower.bundler.utils.function.FileResolver;
 import gay.ampflower.bundler.utils.function.IntBiFunction;
 import gay.ampflower.bundler.world.io.ChunkReader;
@@ -9,11 +10,13 @@ import gay.ampflower.bundler.world.io.ChunkWriter;
 import gay.ampflower.bundler.world.io.RegionHandler;
 import gay.ampflower.bundler.world.io.resolvers.McRegionResolver;
 
+import java.io.IOError;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Iterator;
 
 /**
  * @author Ampflower
@@ -72,6 +75,20 @@ public class RegionedChunkStorage implements ChunkStorage {
 		try (final var output = Files.newOutputStream(path, writeOptions)) {
 			regionHandler.writeRegion(output, region, new McRegionChunkReader(x, y));
 		}
+	}
+
+	@Override
+	public Iterator<Region> iterateRegions() throws IOException {
+		return new LongTransiterator<>(regionResolver.iterate(workingDirectory).iterator(), l -> {
+			int x = (int) (l >>> 32);
+			int y = (int) l;
+
+			try {
+				return readRegion(x, y);
+			} catch (IOException ioe) {
+				throw new IOError(ioe);
+			}
+		});
 	}
 
 	@Override

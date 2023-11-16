@@ -4,6 +4,7 @@ import gay.ampflower.bundler.world.Chunk;
 import gay.ampflower.bundler.world.Region;
 
 import java.io.IOException;
+import java.util.Iterator;
 
 /**
  * @author Ampflower
@@ -17,6 +18,8 @@ public interface ChunkStorage {
 	Region readRegion(int x, int y) throws IOException;
 
 	void writeRegion(int x, int y, Region region) throws IOException;
+
+	Iterator<Region> iterateRegions() throws IOException;
 
 	boolean isNativelyRegioned();
 }

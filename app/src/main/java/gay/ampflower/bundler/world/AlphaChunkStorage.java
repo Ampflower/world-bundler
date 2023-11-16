@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Iterator;
 
 /**
  * @author Ampflower
@@ -84,6 +85,11 @@ public class AlphaChunkStorage implements ChunkStorage {
 				writeChunk(cx + dx, cy + dy, chunks[dy * Region.REGION_BOUND + dx]);
 			}
 		}
+	}
+
+	@Override
+	public Iterator<Region> iterateRegions() throws IOException {
+		return null;
 	}
 
 	@Override
