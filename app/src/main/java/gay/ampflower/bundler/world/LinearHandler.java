@@ -37,7 +37,7 @@ public class LinearHandler implements RegionHandler {
 	private static final int HEADER_LENGTH = 32;
 
 
-	public Region readRegion(InputStream stream) throws IOException {
+	public Region readRegion(final int x, final int y, InputStream stream) throws IOException {
 		final var buf = new byte[8192];
 		int read = 0;
 
@@ -83,7 +83,7 @@ public class LinearHandler implements RegionHandler {
 			logger.warn("Missing trailer, got {}", read);
 		}
 
-		return new Region(timestamps, chunks);
+		return new Region(x, y, timestamps, chunks);
 	}
 
 	private static Header readHeader(InputStream stream, byte[] buf) throws IOException {
@@ -140,7 +140,7 @@ public class LinearHandler implements RegionHandler {
 		final var header = new Header(
 			LINEAR_SIGNATURE,
 			LINEAR_VERSION,
-			ArrayUtils.max(region.timestamps()),
+			ArrayUtils.maxToInt(region.chunks(), Chunk::timestamp),
 			(byte) compressionLevel,
 			(short) chunks.count(),
 			chunks.array().length,
@@ -163,13 +163,13 @@ public class LinearHandler implements RegionHandler {
 			int metaIndex = i * 2;
 
 			var chunk = region.chunks()[i];
-			if (chunk == null || chunk.length == 0) {
+			if (chunk == null || chunk.array().length == 0) {
 				continue;
 			}
 
 			count++;
-			size += chunkMeta[metaIndex] = chunk.length;
-			chunkMeta[metaIndex + 1] = region.timestamps()[i];
+			size += chunkMeta[metaIndex] = chunk.array().length;
+			chunkMeta[metaIndex + 1] = chunk.timestamp();
 		}
 
 		int offset = chunkMeta.length * ArrayUtils.INT_STRIDE;
@@ -177,9 +177,9 @@ public class LinearHandler implements RegionHandler {
 		ArrayUtils.copy(chunkMeta, 0, bytes, 0, chunkMeta.length, ByteOrder.BIG_ENDIAN);
 
 		for (var chunk : region.chunks()) {
-			if (chunk == null || chunk.length == 0) continue;
-			System.arraycopy(chunk, 0, bytes, offset, chunk.length);
-			offset += chunk.length;
+			if (chunk == null || chunk.array().length == 0) continue;
+			System.arraycopy(chunk.array(), 0, bytes, offset, chunk.array().length);
+			offset += chunk.array().length;
 		}
 
 		return new Chunks(count, LevelCompressor.ZSTD.deflate(bytes));

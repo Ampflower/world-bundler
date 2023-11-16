@@ -49,12 +49,12 @@ public final class McRegionHandler implements RegionHandler {
 	private static final byte COMPRESSION_FLAG_EXTERN = -0x80;
 
 	@Override
-	public Region readRegion(final InputStream stream) throws IOException {
-		return this.readRegion(stream, new ChunkReader.McLogger());
+	public Region readRegion(final int x, final int y, final InputStream stream) throws IOException {
+		return this.readRegion(x, y, stream, new ChunkReader.McLogger());
 	}
 
 	@Override
-	public Region readRegion(final InputStream stream, final ChunkReader chunkReader) throws IOException {
+	public Region readRegion(final int x, final int y, final InputStream stream, final ChunkReader chunkReader) throws IOException {
 		int sectorOffset = INITIAL_SECTOR_OFFSET;
 		final var buf = new byte[SECTOR];
 
@@ -124,7 +124,7 @@ public final class McRegionHandler implements RegionHandler {
 			}
 		}
 
-		return new Region(timestamps, chunks);
+		return new Region(x, y, timestamps, chunks);
 	}
 
 	private static FirstSectorEntry[] readFirstSector(final InputStream stream, final byte[] buf) throws IOException {
@@ -204,13 +204,14 @@ public final class McRegionHandler implements RegionHandler {
 
 		for(int i = 0; i < Region.CHUNK_COUNT; i++) {
 			final var chunk = region.chunks()[i];
+			final int timestamp;
 			if(chunk != null) {
-				IoUtils.verifyNbt(chunk, i);
-				deflater.setInput(chunk);
+				IoUtils.verifyNbt(chunk.array(), i);
+				deflater.setInput(chunk.array());
 				deflater.finish();
-				final var toWrite = new byte[sectors(chunk.length) * SECTOR];
+				final var toWrite = new byte[sectors(chunk.array().length) * SECTOR];
 				final var toSize = deflater.deflate(toWrite);
-				if(!deflater.finished()) {
+				if (!deflater.finished()) {
 					logger.warn("Discarded {} as : {}", i, toWrite);
 					sizes[i] = 0;
 				} else {
@@ -218,6 +219,9 @@ public final class McRegionHandler implements RegionHandler {
 					sizes[i] = toSize;
 				}
 				deflater.reset();
+				timestamp = chunk.timestamp();
+			} else {
+				timestamp = 0;
 			}
 
 			int sectors = sectors(sizes[i]);
@@ -225,11 +229,11 @@ public final class McRegionHandler implements RegionHandler {
 				assert (sizes[i] == 0);
 				entries[i] = ChunkEntry.SENTINEL;
 			} else if (sectors > MAX_SECTORS) {
-				entries[i] = new ChunkEntry(offset, -1, region.timestamps()[i]);
+				entries[i] = new ChunkEntry(offset, -1, timestamp);
 				logger.info("Signaling extern: {}", i);
 				offset++;
 			} else {
-				entries[i] = new ChunkEntry(offset, sectors, region.timestamps()[i]);
+				entries[i] = new ChunkEntry(offset, sectors, timestamp);
 				logger.info("Preparing {} -> {}", offset, sectors);
 				offset += sectors;
 			}

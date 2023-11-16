@@ -33,13 +33,13 @@ public class RegionedChunkStorage implements ChunkStorage {
 	}
 
 	@Override
-	public byte[] readChunk(final int x, final int y) throws IOException {
+	public Chunk readChunk(final int x, final int y) throws IOException {
 		// FIXME: Optimise this better
 		return readRegion(x >> 5, y >> 5).getChunk(x & Region.BIT_MASK, y & Region.BIT_MASK);
 	}
 
 	@Override
-	public void writeChunk(final int x, final int y, final byte[] chunk) throws IOException {
+	public void writeChunk(final int x, final int y, final Chunk chunk) throws IOException {
 		// FIXME: Optimise this better
 		Region region = readRegion(x >> Region.BIT_SHIFT, y >> Region.BIT_SHIFT);
 		region.setChunk(x & Region.BIT_MASK, y & Region.BIT_MASK, chunk);
@@ -52,7 +52,7 @@ public class RegionedChunkStorage implements ChunkStorage {
 
 		if (Files.exists(path)) {
 			try (final var input = Files.newInputStream(path)) {
-				return regionHandler.readRegion(input);
+				return regionHandler.readRegion(x, y, input);
 			}
 		}
 
@@ -88,8 +88,8 @@ public class RegionedChunkStorage implements ChunkStorage {
 
 		@Override
 		public byte[] readChunk(final int i, final LevelCompressor compressor) throws IOException {
-			final int y = regionY * Region.REGION_BOUND + (i >> 4);
-			final int x = regionX * Region.REGION_BOUND + (i & 31);
+			final int x = Region.getChunkX(regionX, i);
+			final int y = Region.getChunkY(regionY, i);
 
 			final var path = workingDirectory.resolve(chunkResolver.apply(x, y));
 
@@ -105,8 +105,8 @@ public class RegionedChunkStorage implements ChunkStorage {
 
 		@Override
 		public void writeChunk(final int i, final byte[] data) throws IOException {
-			final int y = regionY * Region.REGION_BOUND + (i >> 4);
-			final int x = regionX * Region.REGION_BOUND + (i & 31);
+			final int x = Region.getChunkX(regionX, i);
+			final int y = Region.getChunkY(regionY, i);
 
 			final var path = workingDirectory.resolve(chunkResolver.apply(x, y));
 

@@ -1,5 +1,6 @@
 package gay.ampflower.bundler.world.io;
 
+import gay.ampflower.bundler.world.Chunk;
 import gay.ampflower.bundler.world.Region;
 
 import java.io.IOException;
@@ -9,9 +10,9 @@ import java.io.IOException;
  * @since ${version}
  **/
 public interface ChunkStorage {
-	byte[] readChunk(int x, int y) throws IOException;
+	Chunk readChunk(int x, int y) throws IOException;
 
-	void writeChunk(int x, int y, byte[] chunk) throws IOException;
+	void writeChunk(int x, int y, Chunk chunk) throws IOException;
 
 	Region readRegion(int x, int y) throws IOException;
 

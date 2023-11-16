@@ -11,10 +11,10 @@ import java.io.OutputStream;
  * @since ${version}
  **/
 public interface RegionHandler {
-	Region readRegion(InputStream stream) throws IOException;
+	Region readRegion(final int x, final int y, InputStream stream) throws IOException;
 
-	default Region readRegion(InputStream stream, ChunkReader chunkReader) throws IOException {
-		return readRegion(stream);
+	default Region readRegion(final int x, final int y, InputStream stream, ChunkReader chunkReader) throws IOException {
+		return readRegion(x, y, stream);
 	}
 
 	void writeRegion(OutputStream stream, Region region) throws IOException;

@@ -5,6 +5,7 @@ import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.function.ToIntFunction;
 
 /**
  * @author Ampflower
@@ -55,6 +56,16 @@ public final class ArrayUtils {
 
 		for (int i = 1; i < ints.length; i++) {
 			max = Math.max(max, ints[i]);
+		}
+
+		return max;
+	}
+
+	public static <T> int maxToInt(final T[] objects, ToIntFunction<T> function) {
+		int max = function.applyAsInt(objects[0]);
+
+		for (int i = 1; i < objects.length; i++) {
+			max = Math.max(max, function.applyAsInt(objects[i]));
 		}
 
 		return max;

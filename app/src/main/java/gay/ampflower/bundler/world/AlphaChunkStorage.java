@@ -32,17 +32,17 @@ public class AlphaChunkStorage implements ChunkStorage {
 	}
 
 	@Override
-	public byte[] readChunk(final int x, final int y) throws IOException {
+	public Chunk readChunk(final int x, final int y) throws IOException {
 		final var path = workingDirectory.resolve(chunkResolver.apply(x, y));
 
 		if (Files.exists(path)) {
-			return LevelCompressor.tryDecompress(Files.readAllBytes(path));
+			return new Chunk(x, y, 0, LevelCompressor.tryDecompress(Files.readAllBytes(path)));
 		}
 		return null;
 	}
 
 	@Override
-	public void writeChunk(final int x, final int y, final byte[] chunk) throws IOException {
+	public void writeChunk(final int x, final int y, final Chunk chunk) throws IOException {
 		final var path = workingDirectory.resolve(chunkResolver.apply(x, y));
 
 		final var parent = path.getParent();
@@ -51,7 +51,7 @@ public class AlphaChunkStorage implements ChunkStorage {
 			Files.createDirectories(parent);
 		}
 
-		Files.write(path, levelCompressor.deflate(chunk), writeOptions);
+		Files.write(path, levelCompressor.deflate(chunk.array()), writeOptions);
 	}
 
 	@Override
@@ -59,7 +59,7 @@ public class AlphaChunkStorage implements ChunkStorage {
 		int cx = x << Region.BIT_SHIFT;
 		int cy = y << Region.BIT_SHIFT;
 
-		byte[][] chunks = new byte[Region.CHUNK_COUNT][];
+		Chunk[] chunks = new Chunk[Region.CHUNK_COUNT];
 
 		for (int dx = 0; dx < Region.REGION_BOUND; dx++) {
 			for (int dy = 0; dy < Region.REGION_BOUND; dy++) {
@@ -68,7 +68,7 @@ public class AlphaChunkStorage implements ChunkStorage {
 			}
 		}
 
-		return new Region(new int[Region.CHUNK_COUNT], chunks);
+		return new Region(x, y, chunks);
 	}
 
 	@Override
@@ -76,7 +76,7 @@ public class AlphaChunkStorage implements ChunkStorage {
 		int cx = x << Region.BIT_SHIFT;
 		int cy = y << Region.BIT_SHIFT;
 
-		byte[][] chunks = region.chunks();
+		Chunk[] chunks = region.chunks();
 
 		for (int dx = 0; dx < Region.REGION_BOUND; dx++) {
 			for (int dy = 0; dy < Region.REGION_BOUND; dy++) {
