@@ -1,11 +1,13 @@
 package gay.ampflower.bundler.world;
 
 import gay.ampflower.bundler.utils.LevelCompressor;
+import gay.ampflower.bundler.utils.function.FileResolver;
 import gay.ampflower.bundler.utils.function.IntBiFunction;
 import gay.ampflower.bundler.world.io.ChunkReader;
 import gay.ampflower.bundler.world.io.ChunkStorage;
 import gay.ampflower.bundler.world.io.ChunkWriter;
 import gay.ampflower.bundler.world.io.RegionHandler;
+import gay.ampflower.bundler.world.io.resolvers.McRegionResolver;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -20,7 +22,7 @@ import java.nio.file.StandardOpenOption;
 public class RegionedChunkStorage implements ChunkStorage {
 	private final RegionHandler regionHandler;
 	private final Path workingDirectory;
-	private final IntBiFunction<String> regionResolver;
+	private final FileResolver regionResolver;
 	private final IntBiFunction<String> chunkResolver;
 
 	private static final OpenOption[] writeOptions = {StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING};
@@ -28,7 +30,7 @@ public class RegionedChunkStorage implements ChunkStorage {
 	public RegionedChunkStorage(final RegionHandler regionHandler, final Path workingDirectory) {
 		this.regionHandler = regionHandler;
 		this.workingDirectory = workingDirectory;
-		this.regionResolver = (x, y) -> "r." + x + "." + y + ".mca";
+		this.regionResolver = new McRegionResolver(".mca");
 		this.chunkResolver = (x, y) -> "c." + x + "." + y + ".mcc";
 	}
 
@@ -48,7 +50,7 @@ public class RegionedChunkStorage implements ChunkStorage {
 
 	@Override
 	public Region readRegion(int x, int y) throws IOException {
-		var path = workingDirectory.resolve(regionResolver.apply(x, y));
+		var path = workingDirectory.resolve(regionResolver.fileName(x, y));
 
 		if (Files.exists(path)) {
 			try (final var input = Files.newInputStream(path)) {
@@ -61,7 +63,7 @@ public class RegionedChunkStorage implements ChunkStorage {
 
 	@Override
 	public void writeRegion(int x, int y, Region region) throws IOException {
-		var path = workingDirectory.resolve(regionResolver.apply(x, y));
+		var path = workingDirectory.resolve(regionResolver.fileName(x, y));
 
 		if (Files.isDirectory(path)) {
 			throw new IOException("Region " + x + ", " + y + " is a directory?");
