@@ -1,5 +1,7 @@
 package gay.ampflower.bundler.world;
 
+import gay.ampflower.bundler.utils.ArrayUtils;
+
 /**
  * Raw region representation in memory.
  *
@@ -28,6 +30,10 @@ public record Region(
 		this.chunks[x * REGION_BOUND + y] = chunk;
 	}
 
+	public int size() {
+		return ArrayUtils.sumNullable(chunks, Chunk::size);
+	}
+
 	public static int getChunkX(int i) {
 		return i & BIT_MASK;
 	}
@@ -51,7 +57,9 @@ public record Region(
 		final var chunks = new Chunk[arrays.length];
 
 		for (int i = 0; i < arrays.length; i++) {
-			chunks[i] = new Chunk(x + getChunkX(i), y + getChunkY(i), timestamps[i], arrays[i]);
+			if (arrays[i] != null) {
+				chunks[i] = new Chunk(x + getChunkX(i), y + getChunkY(i), timestamps[i], arrays[i]);
+			}
 		}
 
 		return chunks;

@@ -23,6 +23,8 @@ public final class ArrayUtils {
 	public static final int INT_STRIDE = 4;
 	public static final int LONG_STRIDE = 8;
 
+	public static final byte[] SENTINEL_BYTES = new byte[0];
+
 	public static <T> T[] sortedCopyOfRange(T[] input, int from, int to, Comparator<T> comparator) {
 		final var array = Arrays.copyOfRange(input, from, to);
 		Arrays.sort(array, comparator);
@@ -49,6 +51,38 @@ public final class ArrayUtils {
 		for (int i = 0; i < to.length; i++) {
 			to[i] = (int) INTS_BIG_ENDIAN.get(from, i << 2);
 		}
+	}
+
+	public static int sum(final int[] ints) {
+		int value = 0;
+
+		for (int i : ints) {
+			value += i;
+		}
+
+		return value;
+	}
+
+	public static <T> int sum(final T[] objects, ToIntFunction<T> function) {
+		int value = 0;
+
+		for (T t : objects) {
+			value += function.applyAsInt(t);
+		}
+
+		return value;
+	}
+
+	public static <T> int sumNullable(final T[] objects, ToIntFunction<T> function) {
+		int value = 0;
+
+		for (T t : objects) {
+			if (t != null) {
+				value += function.applyAsInt(t);
+			}
+		}
+
+		return value;
 	}
 
 	public static int max(final int[] ints) {

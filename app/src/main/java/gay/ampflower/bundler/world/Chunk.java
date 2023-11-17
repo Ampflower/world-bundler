@@ -10,4 +10,8 @@ public record Chunk(
 	int timestamp,
 	byte[] array
 ) {
+
+	public int size() {
+		return array.length;
+	}
 }
