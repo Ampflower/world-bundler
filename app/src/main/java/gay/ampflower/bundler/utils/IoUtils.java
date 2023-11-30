@@ -33,9 +33,9 @@ public final class IoUtils {
 	public static int readMin(InputStream stream, byte[] buf, int off, int minLen, int known) throws IOException {
 		int read, count = 0, len = buf.length - off;
 
-		while((read = stream.read(buf, off + count, len - count)) >= 0) {
+		while ((read = stream.read(buf, off + count, len - count)) >= 0) {
 			count += read;
-			if(known + count > minLen) {
+			if (known + count > minLen) {
 				break;
 			}
 		}
@@ -43,14 +43,26 @@ public final class IoUtils {
 		return count;
 	}
 
+	public static void readExact(InputStream stream, byte[] buf, int off, int len) throws IOException {
+		int read;
+		if ((read = stream.read(buf, off, len)) != len) {
+			throw new IOException("Expected " + len + ", got " + read);
+		}
+	}
+
+	public static int readIntBigEndian(InputStream stream, byte[] buf, int off) throws IOException {
+		readExact(stream, buf, off, 4);
+		return (int) ArrayUtils.INTS_BIG_ENDIAN.get(buf, off);
+	}
+
 	public static void writeSectors(OutputStream stream, @Nonnull byte[] read, int roff, @Nonnull byte[] buf, int woff, int len) throws IOException {
 		int written = 0;
 
-		if(buf.length != Integer.highestOneBit(buf.length)) {
+		if (buf.length != Integer.highestOneBit(buf.length)) {
 			throw new IllegalArgumentException("Not a power of 2 buffer size: " + buf.length);
 		}
 
-		if(woff + len >= buf.length) {
+		if (woff + len >= buf.length) {
 			written = buf.length - woff;
 			System.arraycopy(read, roff, buf, woff, written);
 			stream.write(buf);
