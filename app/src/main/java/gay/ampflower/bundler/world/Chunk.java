@@ -21,4 +21,19 @@ public record Chunk(
 	public int size() {
 		return array.length;
 	}
+
+	@Override
+	public boolean equals(final Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		final Chunk chunk = (Chunk) o;
+		return x == chunk.x && y == chunk.y && timestamp == chunk.timestamp && Arrays.equals(array, chunk.array);
+	}
+
+	@Override
+	public int hashCode() {
+		int result = Objects.hash(x, y, timestamp);
+		result = 31 * result + Arrays.hashCode(array);
+		return result;
+	}
 }

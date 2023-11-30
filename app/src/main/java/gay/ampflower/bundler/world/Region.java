@@ -2,6 +2,9 @@ package gay.ampflower.bundler.world;
 
 import gay.ampflower.bundler.utils.ArrayUtils;
 
+import java.util.Arrays;
+import java.util.Objects;
+
 /**
  * Raw region representation in memory.
  *
@@ -32,6 +35,21 @@ public record Region(
 
 	public int size() {
 		return ArrayUtils.sumNullable(chunks, Chunk::size);
+	}
+
+	@Override
+	public boolean equals(final Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		final Region region = (Region) o;
+		return x == region.x && y == region.y && Arrays.equals(chunks, region.chunks);
+	}
+
+	@Override
+	public int hashCode() {
+		int result = Objects.hash(x, y);
+		result = 31 * result + Arrays.hashCode(chunks);
+		return result;
 	}
 
 	public static int getChunkX(int i) {
