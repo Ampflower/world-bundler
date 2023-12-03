@@ -1,6 +1,6 @@
 package gay.ampflower.bundler.utils;
 
-import gay.ampflower.bundler.world.McRegionHandler;
+import gay.ampflower.bundler.world.region.McRegionHandler;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;

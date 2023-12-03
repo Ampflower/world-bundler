@@ -1,10 +1,12 @@
-package gay.ampflower.bundler.world;
+package gay.ampflower.bundler.world.region;
 
 import com.github.luben.zstd.Zstd;
 import gay.ampflower.bundler.utils.ArrayUtils;
 import gay.ampflower.bundler.utils.LevelCompressor;
 import gay.ampflower.bundler.utils.LimitedInputStream;
 import gay.ampflower.bundler.utils.LogUtils;
+import gay.ampflower.bundler.world.Chunk;
+import gay.ampflower.bundler.world.Region;
 import gay.ampflower.bundler.world.io.RegionHandler;
 import org.apache.commons.compress.compressors.zstandard.ZstdCompressorInputStream;
 import org.slf4j.Logger;

@@ -3,7 +3,7 @@ package gay.ampflower.bundler.utils;
 import com.github.luben.zstd.Zstd;
 import com.github.luben.zstd.ZstdInputStream;
 import com.github.luben.zstd.ZstdOutputStream;
-import gay.ampflower.bundler.world.McRegionHandler;
+import gay.ampflower.bundler.world.region.McRegionHandler;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
