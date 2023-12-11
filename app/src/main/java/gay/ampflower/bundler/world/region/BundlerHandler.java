@@ -42,7 +42,7 @@ public class BundlerHandler implements RegionHandler {
 			final int size = IoUtils.readIntBigEndian(stream, buf, 0);
 
 			if (size < 0) {
-				logger.info("{} + {} ({})", i, ~size - 1, Integer.toUnsignedString(size, 16));
+				logger.trace("{} + {} ({})", i, ~size - 1, Integer.toUnsignedString(size, 16));
 				i += ~size - 1;
 			}
 			if (size <= 0) continue;
@@ -52,14 +52,9 @@ public class BundlerHandler implements RegionHandler {
 
 			adler.update(chunk);
 
-			final int expected = IoUtils.readIntBigEndian(stream, buf, 0);
 			final int real = (int) adler.getValue();
 			adler.reset();
-			logger.info("Read {} bytes @ {} with timestamp {} & chksum {}", chunk.length, i, timestamp, Integer.toUnsignedString(real, 16));
-			if (expected != real) {
-				logger.warn("Corrupted chunk @ {}: Expected {}, got {}", i, expected, real);
-				continue;
-			}
+			logger.trace("Read {} bytes @ {} with timestamp {} & chksum {}", chunk.length, i, timestamp, Integer.toUnsignedString(real, 16));
 
 			chunkCount++;
 			chunks[i] = new Chunk(x, y, i, timestamp, chunk);
@@ -160,9 +155,8 @@ public class BundlerHandler implements RegionHandler {
 			int adlerValue = (int) adler.getValue();
 			INT_HANDLE.set(buf, 0, adlerValue);
 			adler.reset();
-			stream.write(buf, 0, ArrayUtils.INT_STRIDE);
 
-			logger.info("Wrote {} bytes @ {} with timestamp {} & chksum {}", chunk.array().length, i, chunk.timestamp(), Integer.toUnsignedString(adlerValue, 16));
+			logger.trace("Wrote {} bytes @ {} with timestamp {} & chksum {}", chunk.array().length, i, chunk.timestamp(), Integer.toUnsignedString(adlerValue, 16));
 		}
 		int delta = Region.CHUNK_COUNT - last;
 		if (delta > 1) {
