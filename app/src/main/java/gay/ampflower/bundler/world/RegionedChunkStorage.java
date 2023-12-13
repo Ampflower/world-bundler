@@ -3,12 +3,10 @@ package gay.ampflower.bundler.world;
 import gay.ampflower.bundler.utils.LevelCompressor;
 import gay.ampflower.bundler.utils.LongTransiterator;
 import gay.ampflower.bundler.utils.function.FileResolver;
-import gay.ampflower.bundler.utils.function.IntBiFunction;
 import gay.ampflower.bundler.world.io.ChunkReader;
 import gay.ampflower.bundler.world.io.ChunkStorage;
 import gay.ampflower.bundler.world.io.ChunkWriter;
 import gay.ampflower.bundler.world.io.RegionHandler;
-import gay.ampflower.bundler.world.io.resolvers.McRegionResolver;
 
 import java.io.IOError;
 import java.io.IOException;
@@ -26,15 +24,16 @@ public class RegionedChunkStorage implements ChunkStorage {
 	private final RegionHandler regionHandler;
 	private final Path workingDirectory;
 	private final FileResolver regionResolver;
-	private final IntBiFunction<String> chunkResolver;
+	private final FileResolver chunkResolver;
 
 	private static final OpenOption[] writeOptions = {StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING};
 
-	public RegionedChunkStorage(final RegionHandler regionHandler, final Path workingDirectory) {
+	public RegionedChunkStorage(final RegionHandler regionHandler, final Path workingDirectory,
+										 final FileResolver regionResolver, final FileResolver chunkResolver) {
 		this.regionHandler = regionHandler;
 		this.workingDirectory = workingDirectory;
-		this.regionResolver = new McRegionResolver(".mca");
-		this.chunkResolver = (x, y) -> "c." + x + "." + y + ".mcc";
+		this.regionResolver = regionResolver;
+		this.chunkResolver = chunkResolver;
 	}
 
 	@Override
@@ -110,7 +109,7 @@ public class RegionedChunkStorage implements ChunkStorage {
 			final int x = Region.getChunkX(regionX, i);
 			final int y = Region.getChunkY(regionY, i);
 
-			final var path = workingDirectory.resolve(chunkResolver.apply(x, y));
+			final var path = workingDirectory.resolve(chunkResolver.fileName(x, y));
 
 			if (Files.exists(path)) {
 				try (final var input = Files.newInputStream(path);
@@ -127,7 +126,7 @@ public class RegionedChunkStorage implements ChunkStorage {
 			final int x = Region.getChunkX(regionX, i);
 			final int y = Region.getChunkY(regionY, i);
 
-			final var path = workingDirectory.resolve(chunkResolver.apply(x, y));
+			final var path = workingDirectory.resolve(chunkResolver.fileName(x, y));
 
 			if (Files.isDirectory(path)) {
 				throw new IOException("Chunk " + x + ", " + y + " is a directory?");

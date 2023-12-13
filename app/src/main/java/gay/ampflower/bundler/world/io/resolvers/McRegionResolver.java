@@ -14,17 +14,19 @@ import java.util.regex.Pattern;
  * @since ${version}
  **/
 public class McRegionResolver implements FileResolver {
+	private final String prefix;
 	private final String extension;
 	private final Pattern pattern;
 
-	public McRegionResolver(String extension) {
+	public McRegionResolver(String prefix, String extension, Pattern pattern) {
+		this.prefix = prefix;
 		this.extension = extension;
-		this.pattern = Pattern.compile("r.(-?\\d+)\\.(-?\\d+)\\" + extension);
+		this.pattern = pattern;
 	}
 
 	@Override
 	public String fileName(final int x, final int y) {
-		return "r." + x + "." + y + extension;
+		return prefix + '.' + x + '.' + y + extension;
 	}
 
 	@Override
