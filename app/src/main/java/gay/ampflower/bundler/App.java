@@ -4,9 +4,7 @@ import gay.ampflower.bundler.utils.LevelCompressor;
 import gay.ampflower.bundler.utils.LevelConverter;
 import gay.ampflower.bundler.utils.LogUtils;
 import gay.ampflower.bundler.world.Region;
-import gay.ampflower.bundler.world.io.WorldReader;
-import gay.ampflower.bundler.world.io.WorldWriter;
-import gay.ampflower.bundler.world.region.BundlerHandler;
+import gay.ampflower.bundler.world.region.LinearHandler;
 import gay.ampflower.bundler.world.region.McRegionHandler;
 import joptsimple.OptionParser;
 import joptsimple.util.EnumConverter;
@@ -22,6 +20,11 @@ import java.util.List;
 public final class App {
 	private static final Logger logger = LogUtils.logger();
 
+	static {
+		// Ensure that anyone using stdout will be forced to use stderr.
+		System.setOut(System.err);
+	}
+
 	public static void main(String[] args) throws IOException {
 
 		final Path regionIn = Path.of(args[0]);
@@ -30,7 +33,7 @@ public final class App {
 		final Region region;
 
 		try (final var stream = Files.newInputStream(regionIn)) {
-			region = McRegionHandler.INSTANCE.readRegion(stream);
+			region = McRegionHandler.INSTANCE.readRegion(0, 0, stream);
 		}
 
 		try (final var stream = Files.newOutputStream(regionOut, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
@@ -83,21 +86,5 @@ public final class App {
 
 		var input = options.valueOf(inputArgument);
 		var output = options.valueOf(outputArgument);
-
-		WorldReader reader;
-		if(Files.isDirectory(input)) {
-			reader = WorldReader.ofDirectory(input);
-		} else {
-			reader = WorldReader.ofArchive(input);
-		}
-
-		reader.start();
-
-		WorldWriter writer;
-		if(Files.isDirectory(output)) {
-			writer = WorldWriter.ofDirectory(output);
-		} else {
-			writer = WorldWriter.ofArchive(output);
-		}
 	}
 }
