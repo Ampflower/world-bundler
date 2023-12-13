@@ -195,7 +195,7 @@ public enum LevelCompressor {
 			mrc.put(compressor.MCREGION_TYPE, compressor);
 		}
 		mcRegionCompressors = Int2ObjectMaps.unmodifiable(mrc);
-		fileCompressors = fc;
+		fileCompressors = Arrays.copyOf(fc, fci);
 	}
 
 	public final byte MCREGION_TYPE;
