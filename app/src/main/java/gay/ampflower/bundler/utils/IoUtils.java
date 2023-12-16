@@ -66,6 +66,7 @@ public final class IoUtils {
 			written = buf.length - woff;
 			System.arraycopy(read, roff, buf, woff, written);
 			stream.write(buf);
+			woff = 0;
 		}
 
 		if(written < len) {
@@ -76,8 +77,8 @@ public final class IoUtils {
 
 		if(written < len) {
 			int end = len - written;
-			System.arraycopy(read, roff + written, buf, 0, end);
-			Arrays.fill(buf, end, buf.length, (byte) 0);
+			System.arraycopy(read, roff + written, buf, woff, end);
+			Arrays.fill(buf, woff + end, buf.length, (byte) 0);
 
 			stream.write(buf);
 			written += end;

@@ -48,19 +48,19 @@ public class LinearHandler implements RegionHandler {
 		final var timestamps = new int[Region.CHUNK_COUNT];
 		final var chunks = new byte[Region.CHUNK_COUNT][];
 
+		int chunkCount = 0;
+
 		try (
 			final var limitStream = new LimitedInputStream(stream, header.completeRegionLength());
 			final var zstdStream = new ZstdCompressorInputStream(limitStream)) {
 			final int metaSize = Region.CHUNK_COUNT * 2;
 			final var chunkMeta = new int[metaSize];
 
-			if((read = zstdStream.readNBytes(buf, 0, metaSize * 4)) != metaSize * 4) {
+			if ((read = zstdStream.readNBytes(buf, 0, metaSize * 4)) != metaSize * 4) {
 				throw new IOException("Expected " + metaSize * 4 + ", got " + read);
 			}
 			// read += IoUtils.readMin(zstdStream, buf, read, metaSize * 4, read - HEADER_LENGTH);
 			ArrayUtils.copy(buf, 0, chunkMeta, 0, metaSize, ByteOrder.BIG_ENDIAN);
-
-			int chunkCount = 0;
 
 			for(int i = 0; i < Region.CHUNK_COUNT; i++) {
 				final int currentChunk = i * 2;
@@ -74,15 +74,19 @@ public class LinearHandler implements RegionHandler {
 				}
 			}
 
-			if(chunkCount != header.chunkCount()) {
+			if (chunkCount != header.chunkCount()) {
 				logger.warn("Missing chunks detected, expected {}, got {}", header.chunkCount, chunkCount);
 			}
 		}
 
 		read = stream.read(buf, 0, 8);
 
-		if(read != 8 || (long)LONG_HANDLE.get(buf, 0) != LINEAR_SIGNATURE) {
+		if (read != 8 || (long) LONG_HANDLE.get(buf, 0) != LINEAR_SIGNATURE) {
 			logger.warn("Missing trailer, got {}", read);
+		}
+
+		if (chunkCount == 0) {
+			return null;
 		}
 
 		return new Region(x, y, timestamps, chunks);
@@ -142,7 +146,7 @@ public class LinearHandler implements RegionHandler {
 		final var header = new Header(
 			LINEAR_SIGNATURE,
 			LINEAR_VERSION,
-			ArrayUtils.maxToInt(region.chunks(), Chunk::timestamp),
+			ArrayUtils.maxToIntNullable(region.chunks(), Chunk::timestamp, 0),
 			(byte) compressionLevel,
 			(short) chunks.count(),
 			chunks.array().length,

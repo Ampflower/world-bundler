@@ -106,6 +106,8 @@ public final class McRegionHandler implements RegionHandler {
 			int compressorId = bytes[offset + 4];
 			var compressor = LevelCompressor.getMcRegionCompressor(compressorId & 0x7F);
 
+			logger.trace("{} @ {} with compressor {} ({}, {})", size, offset, Integer.toHexString(compressorId), compressorId, compressor);
+
 			if (compressor == null) {
 				logger.warn("Corrupted chunk {}; Invalid compressor: {}", i, compressorId & 0x7F);
 				continue;
@@ -168,7 +170,7 @@ public final class McRegionHandler implements RegionHandler {
 				INT_HANDLE.set(buf, 0, 1);
 				if(chunkWriter != null) {
 					chunkWriter.writeChunk(i, chunks[i]);
-					buf[4] = COMPRESSION_ZLIB;
+					buf[4] = COMPRESSION_ZLIB | COMPRESSION_FLAG_EXTERN;
 				} else {
 					buf[4] = COMPRESSION_NONE;
 				}
@@ -206,7 +208,7 @@ public final class McRegionHandler implements RegionHandler {
 		for(int i = 0; i < Region.CHUNK_COUNT; i++) {
 			final var chunk = region.chunks()[i];
 			final int timestamp;
-			if(chunk != null) {
+			if (chunk != null && chunk.size() > 0) {
 				IoUtils.verifyNbt(chunk.array(), i);
 				deflater.setInput(chunk.array());
 				deflater.finish();

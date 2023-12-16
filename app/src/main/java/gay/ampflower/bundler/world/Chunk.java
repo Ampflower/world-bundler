@@ -1,6 +1,7 @@
 package gay.ampflower.bundler.world;
 
 import java.util.Arrays;
+import java.util.HexFormat;
 import java.util.Objects;
 
 /**
@@ -13,6 +14,10 @@ public record Chunk(
 	int timestamp,
 	byte[] array
 ) {
+
+	public Chunk {
+		Objects.requireNonNull(array, "array");
+	}
 
 	public Chunk(int rx, int ry, int i, int timestamp, byte[] array) {
 		this(Region.getChunkX(rx, i), Region.getChunkY(ry, i), timestamp, array);
@@ -35,5 +40,10 @@ public record Chunk(
 		int result = Objects.hash(x, y, timestamp);
 		result = 31 * result + Arrays.hashCode(array);
 		return result;
+	}
+
+	@Override
+	public String toString() {
+		return x + ", " + y + " @ " + timestamp + ": " + HexFormat.of().formatHex(this.array);
 	}
 }

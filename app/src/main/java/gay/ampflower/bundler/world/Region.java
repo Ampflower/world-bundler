@@ -21,6 +21,10 @@ public record Region(
 	public static final int BIT_MASK = 31;
 	public static final int CHUNK_COUNT = REGION_BOUND * REGION_BOUND;
 
+	public Region {
+		if (chunks.length != CHUNK_COUNT) throw new IllegalArgumentException("chunks[" + chunks.length + "]");
+	}
+
 	public Region(int x, int y, int[] timestamps, byte[][] chunks) {
 		this(x, y, toChunks(x, y, timestamps, chunks));
 	}
@@ -42,7 +46,22 @@ public record Region(
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		final Region region = (Region) o;
-		return x == region.x && y == region.y && Arrays.equals(chunks, region.chunks);
+		return x == region.x && y == region.y && chunkArraysEqual(chunks, region.chunks);
+	}
+
+	private static boolean chunkArraysEqual(final Chunk[] a, final Chunk[] b) {
+		for (int i = 0; i < CHUNK_COUNT; i++) {
+			if (!chunksEqual(a[i], b[i])) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private static boolean chunksEqual(final Chunk a, final Chunk b) {
+		boolean an = a == null || a.size() == 0;
+		boolean bn = b == null || b.size() == 0;
+		return (an & bn) || (!an && a.equals(b));
 	}
 
 	@Override
@@ -50,6 +69,20 @@ public record Region(
 		int result = Objects.hash(x, y);
 		result = 31 * result + Arrays.hashCode(chunks);
 		return result;
+	}
+
+	@Override
+	public String toString() {
+		final var sb = new StringBuilder(1024).append("Region ").append(x).append(", ").append(y).append('\n');
+		for (int i = 0; i < CHUNK_COUNT; i++) {
+			final var chunk = chunks[i];
+			if (chunk == null || chunk.size() == 0) {
+				sb.append("null\n");
+			} else {
+				sb.append(chunk).append('\n');
+			}
+		}
+		return sb.toString();
 	}
 
 	public static int getChunkX(int i) {

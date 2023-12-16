@@ -42,10 +42,13 @@ public class BundlerHandler implements RegionHandler {
 			final int size = IoUtils.readIntBigEndian(stream, buf, 0);
 
 			if (size < 0) {
-				logger.trace("{} + {} ({})", i, ~size - 1, Integer.toUnsignedString(size, 16));
-				i += ~size - 1;
+				logger.trace("{} + {} ({})", i, ~size, Integer.toUnsignedString(size, 16));
+				i += ~size;
 			}
-			if (size <= 0) continue;
+			if (size <= 0) {
+				logger.trace("Jumping as size <= 0");
+				continue;
+			}
 
 			final int timestamp = IoUtils.readIntBigEndian(stream, buf, 0);
 			final byte[] chunk = readChunk(stream, i, size);
@@ -64,6 +67,10 @@ public class BundlerHandler implements RegionHandler {
 
 		if (chunkCount != expectedChunkCount) {
 			logger.warn("Missing chunks detected, expected {}, got {}", expectedChunkCount, chunkCount);
+		}
+
+		if (chunkCount == 0) {
+			return null;
 		}
 
 		return new Region(x, y, chunks);
@@ -128,7 +135,7 @@ public class BundlerHandler implements RegionHandler {
 
 		final var adler = new Adler32();
 
-		int count = 0, last = 0;
+		int count = 0, last = -1;
 
 		for (int i = 0; i < Region.CHUNK_COUNT; i++) {
 			var chunk = region.chunks()[i];
@@ -138,8 +145,10 @@ public class BundlerHandler implements RegionHandler {
 
 			int delta = i - last;
 			if (delta > 1) {
+				delta--;
 				INT_HANDLE.set(buf, 0, -delta);
 				stream.write(buf, 0, ArrayUtils.INT_STRIDE);
+				logger.trace("Wrote delta {} as {} ({})", delta, Integer.toHexString(-delta), -delta);
 			}
 			last = i;
 

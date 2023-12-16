@@ -104,4 +104,21 @@ public final class ArrayUtils {
 
 		return max;
 	}
+
+	public static <T> int maxToIntNullable(final T[] objects, ToIntFunction<T> function, int def) {
+		int max = applyOrDefault(objects[0], function, def);
+
+		for (int i = 1; i < objects.length; i++) {
+			max = Math.max(max, applyOrDefault(objects[i], function, def));
+		}
+
+		return max;
+	}
+
+	private static <T> int applyOrDefault(T object, ToIntFunction<T> function, int def) {
+		if (object == null) {
+			return def;
+		}
+		return function.applyAsInt(object);
+	}
 }
