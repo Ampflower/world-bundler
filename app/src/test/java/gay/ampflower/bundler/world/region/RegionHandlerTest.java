@@ -24,7 +24,8 @@ import static gay.ampflower.bundler.TestUtils.array;
  * @since ${version}
  **/
 public class RegionHandlerTest {
-	private static final RegionHandler[] handlers = {BundlerHandler.INSTANCE, LinearHandler.INSTANCE, McRegionHandler.INSTANCE};
+	private static final RegionHandler[] handlers = {BundlerHandler.INSTANCE, LinearHandler.INSTANCE,
+		McRegionHandler.INSTANCE, McRegionRecoveryHandler.INSTANCE};
 	private static final Logger logger = LogUtils.logger();
 
 	@Test(dataProvider = "handlersAndEmptyRegions")

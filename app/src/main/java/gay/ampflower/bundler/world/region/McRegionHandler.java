@@ -29,27 +29,27 @@ public class McRegionHandler implements RegionHandler {
 	public static final McRegionHandler INSTANCE = new McRegionHandler();
 
 	// BE is used for McRegion.
-	private static final VarHandle INT_HANDLE = ArrayUtils.INTS_BIG_ENDIAN;
+	static final VarHandle INT_HANDLE = ArrayUtils.INTS_BIG_ENDIAN;
 
-	private static final int BYTE_MASK = 0xFF;
-	private static final int SECTOR = 4096;
-	private static final int SECTOR_MASK = SECTOR - 1;
-	private static final int SECTOR_BITS = 12;
+	static final int BYTE_MASK = 0xFF;
+	static final int SECTOR = 4096;
+	static final int SECTOR_MASK = SECTOR - 1;
+	static final int SECTOR_BITS = 12;
 
-	private static final int INITIAL_SECTOR_OFFSET = 2;
-	private static final int CHUNK_HEADER_SIZE = 5;
+	static final int INITIAL_SECTOR_OFFSET = 2;
+	static final int CHUNK_HEADER_SIZE = 5;
 
-	private static final int MAX_SECTORS = 255;
-	private static final int CHUNK_CUTOFF = SECTOR * MAX_SECTORS;
+	static final int MAX_SECTORS = 255;
+	static final int CHUNK_CUTOFF = SECTOR * MAX_SECTORS;
 
 	// Fun fact: 0x00 is unused.
 	public static final byte COMPRESSION_GZIP = 0x01;
 	public static final byte COMPRESSION_ZLIB = 0x02;
 	public static final byte COMPRESSION_NONE = 0x03;
 
-	private static final int COMPRESSION_MASK_MIN = 0x7F;
-	private static final int COMPRESSION_MASK_ALL = 0xFF;
-	private static final byte COMPRESSION_FLAG_EXTERN = -0x80;
+	static final int COMPRESSION_MASK_MIN = 0x7F;
+	static final int COMPRESSION_MASK_ALL = 0xFF;
+	static final byte COMPRESSION_FLAG_EXTERN = -0x80;
 
 	@Override
 	public Region readRegion(final int x, final int y, final InputStream stream) throws IOException {
@@ -94,7 +94,19 @@ public class McRegionHandler implements RegionHandler {
 				continue;
 			}
 
+			if (entry.offset() > sectors) {
+				logger.error("Corrupted entry @ [{},{}][{}]: Uncaught out of bound sector {} for total {}",
+					x, y, i, entry.offset(), sectors);
+			}
+
 			int offset = (entry.offset() - sectorOffset) * SECTOR;
+
+			if (offset > bytes.length - 4 || offset < 0) {
+				logger.warn("Corrupted entry @ [{},{}][{}]: Tried to read int @ chunk[{}] (len: {})",
+					x, y, i, offset, bytes.length);
+				continue;
+			}
+
 			int size = (int) INT_HANDLE.get(bytes, offset) - 1;
 
 			int compressorId = bytes[offset + 4];
@@ -107,6 +119,10 @@ public class McRegionHandler implements RegionHandler {
 				continue;
 			}
 
+			chunks[i] = readChunk(x, y, i, size, compressorId, chunkReader, compressor, bytes, offset);
+			if (true) {
+				continue;
+			}
 			if (compressorId < 0) {
 				chunks[i] = chunkReader.readChunk(i, compressor);
 				if (size != 0 && chunks[i] != null) {
@@ -126,9 +142,11 @@ public class McRegionHandler implements RegionHandler {
 		return new Region(x, y, timestamps, chunks);
 	}
 
-	private static FirstSectorEntry[] readFirstSector(final InputStream stream, final byte[] buf) throws IOException {
-		final int[] offsets = IoUtils.readBigEndian(stream, buf);
+	static FirstSectorEntry[] readFirstSector(final InputStream stream, final byte[] buf) throws IOException {
+		return parseFirstSector(IoUtils.readBigEndian(stream, buf));
+	}
 
+	static FirstSectorEntry[] parseFirstSector(final int[] offsets) {
 		final var entries = new FirstSectorEntry[Region.CHUNK_COUNT];
 
 		for (int i = 0; i < Region.CHUNK_COUNT; i++) {
@@ -156,7 +174,8 @@ public class McRegionHandler implements RegionHandler {
 			}
 			final var witnessValue = set.put(entry.offset, i);
 			if (witnessValue >= 0) {
-				logger.warn("Corrupted chunk entry [{},{}][{}]: {}", x, y, i, entry);
+				logger.warn("Corrupted chunk entry [{},{}][{}]: {} directly overlaps {} ({})",
+					x, y, i, entry, witnessValue, entries[witnessValue]);
 			}
 			sectors = Math.max(entry.offset + entry.sectors, sectors);
 		}
@@ -164,11 +183,40 @@ public class McRegionHandler implements RegionHandler {
 		return new SectorMeta(sectors, sectorOffset);
 	}
 
-	/**
-	 * @noinspection MethodMayBeStatic
-	 */
 	protected byte[] readIntoMemory(final InputStream stream, final int len) throws IOException {
 		return stream.readNBytes(len);
+	}
+
+	protected byte[] readChunk(final int x, final int y, final int i, final int size, final int compressorId,
+										final ChunkReader chunkReader, final LevelCompressor compressor, final byte[] bytes,
+										final int offset) throws IOException {
+		final byte[] chunk;
+		if (compressorId < 0) {
+			chunk = chunkReader.readChunk(i, compressor);
+			if (size != 0 && chunk != null) {
+				logger.warn("Corrupted chunk [{},{}][{}]; found size {} for external chunk", x, y, i, size);
+			}
+			if (chunk != null) {
+				IoUtils.verifyNbt(chunk, i);
+			}
+			return chunk;
+		}
+
+		if (size == 0) {
+			logger.warn("Corrupted chunk [{},{}][{}]; zero-size with compressor {}",
+				x, y, i, compressorId & COMPRESSION_MASK_ALL);
+			return null;
+		}
+
+		if (offset + 5 + size > bytes.length) {
+			logger.warn("Corrupted chunk [{},{}][{}]; overread: off: {}, len: {}, total: {}",
+				x, y, i, offset + 5, size, bytes.length);
+			return null;
+		}
+
+		chunk = compressor.inflate(bytes, offset + 5, size);
+		IoUtils.verifyNbt(chunk, i);
+		return chunk;
 	}
 
 	@Override
@@ -276,8 +324,8 @@ public class McRegionHandler implements RegionHandler {
 		return write;
 	}
 
-	private record FirstSectorEntry(int offset, int sectors) {
-		private static FirstSectorEntry of(int upper, int pos) {
+	record FirstSectorEntry(int offset, int sectors) {
+		static FirstSectorEntry of(int upper, int pos) {
 			if (upper == 0) {
 				return SENTINEL;
 			}
@@ -293,7 +341,7 @@ public class McRegionHandler implements RegionHandler {
 			return new FirstSectorEntry(upper >>> 8, upper & BYTE_MASK);
 		}
 
-		private static final FirstSectorEntry SENTINEL = new FirstSectorEntry(0, 0);
+		static final FirstSectorEntry SENTINEL = new FirstSectorEntry(0, 0);
 	}
 
 	private record ChunkEntry(int offset, int sectors, int timestamp) {
@@ -315,5 +363,6 @@ public class McRegionHandler implements RegionHandler {
 		private static final ChunkEntry SENTINEL = new ChunkEntry(0, 0, 0);
 	}
 
-	private record SectorMeta(int sectors, int sectorOffset) { }
+	record SectorMeta(int sectors, int sectorOffset) {
+	}
 }

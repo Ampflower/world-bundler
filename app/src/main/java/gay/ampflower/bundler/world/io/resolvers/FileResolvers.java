@@ -10,6 +10,7 @@ import gay.ampflower.bundler.world.io.ChunkStorage;
 import gay.ampflower.bundler.world.io.RegionHandler;
 import gay.ampflower.bundler.world.region.LinearHandler;
 import gay.ampflower.bundler.world.region.McRegionHandler;
+import gay.ampflower.bundler.world.region.McRegionRecoveryHandler;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -22,7 +23,9 @@ import java.util.regex.Pattern;
  **/
 public enum FileResolvers {
 	McRegion(Type.REGION, McRegionHandler.INSTANCE, ".mcr", ".mcc"),
+	McRegionRecovery(Type.REGION, McRegionRecoveryHandler.INSTANCE, ".mcr", ".mcc"),
 	Anvil(Type.REGION, McRegionHandler.INSTANCE, ".mca", ".mcc"),
+	AnvilRecovery(Type.REGION, McRegionRecoveryHandler.INSTANCE, ".mca", ".mcc"),
 	Linear(Type.REGION, LinearHandler.INSTANCE, ".linear", null),
 	Alpha(Chunk.inst, ".dat",
 		Pattern.compile("/" + Constants.base36 + "{1,2}/" + Constants.base36 + "{1,2}/c\\.(?<x>" + Constants.base36 + "+)\\.(?<y>" + Constants.base36 + "+)\\.dat$", Pattern.CASE_INSENSITIVE), null, 36) {

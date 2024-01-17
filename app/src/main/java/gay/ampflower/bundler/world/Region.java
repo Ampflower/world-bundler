@@ -47,11 +47,30 @@ public record Region(
 
 	public boolean isEmpty() {
 		for (final var chunk : chunks) {
-			if (chunk != null && chunk.size() >= 0) {
+			if (chunk != null && chunk.size() > 0) {
 				return false;
 			}
 		}
 		return true;
+	}
+
+	public boolean isFull() {
+		for (final var chunk : chunks) {
+			if (chunk == null || chunk.size() == 0) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	public int popCount() {
+		int i = 0;
+		for (final var chunk : chunks) {
+			if (chunk != null && chunk.size() > 0) {
+				i++;
+			}
+		}
+		return i;
 	}
 
 	@Override
