@@ -106,7 +106,9 @@ public final class McRegionRecoveryHandler extends McRegionHandler implements Re
 			logger.trace("Could not find any chunk data at [{},{}][{}], continuing onto next sector", x, y, i);
 		}
 
-		logger.info("Recovered {} chunks from [{},{}]; previously {}", chunks.size(), x, y, region.popCount());
+		if (!chunks.isEmpty()) {
+			logger.info("Recovered {} chunks from [{},{}]; previously {}", chunks.size(), x, y, region.popCount());
+		}
 
 		return region;
 	}
@@ -213,18 +215,23 @@ public final class McRegionRecoveryHandler extends McRegionHandler implements Re
 		try {
 			final byte[] data = compressor.inflate(buffer, offset, buffer.length - offset);
 
+			if (data.length == 0) {
+				logger.debug("No data to be had from {}", offset);
+				return null;
+			}
+
 			if (expectedSize == data.length) {
-				logger.debug("Recovered {} bytes; length matches McRegion header", data.length);
+				logger.trace("Recovered {} bytes; length matches McRegion header", data.length);
 			} else {
-				logger.debug("Bytes mismatch, expected {}, got {}", expectedSize, data.length);
+				logger.trace("Bytes mismatch, expected {}, got {}", expectedSize, data.length);
 			}
 
 			IoUtils.verifyNbt(data, -1);
 
 			logger.info("Successfully read seemingly valid data @ {}", offset);
 			return data;
-		} catch (IOException | AssertionError error) {
-			logger.debug("Failed to read data @ {} with compressor {}", offset, compressor, error);
+		} catch (IOException | IndexOutOfBoundsException | AssertionError error) {
+			logger.trace("Failed to read data @ {} with compressor {}", offset, compressor, error);
 		}
 		return null;
 	}

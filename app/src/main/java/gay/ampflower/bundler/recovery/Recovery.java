@@ -37,11 +37,12 @@ public final class Recovery {
 	}
 
 	private static void recover(ChunkStorage output, Region recoveredRegion) throws IOException {
-		logger.info("Got {}", recoveredRegion);
+		logger.trace("Raw: {}", recoveredRegion);
 		if (recoveredRegion == null || recoveredRegion.isEmpty()) {
 			logger.warn("Failed to read a region");
 			return;
 		}
+		logger.info("Got [{},{}]: {}", recoveredRegion.x(), recoveredRegion.y(), recoveredRegion.popCount());
 
 		final int x = recoveredRegion.x(), y = recoveredRegion.y();
 
