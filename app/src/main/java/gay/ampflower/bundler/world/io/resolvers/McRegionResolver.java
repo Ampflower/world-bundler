@@ -1,8 +1,10 @@
 package gay.ampflower.bundler.world.io.resolvers;
 
+import gay.ampflower.bundler.utils.LogUtils;
 import gay.ampflower.bundler.utils.function.FileResolver;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,6 +16,8 @@ import java.util.regex.Pattern;
  * @since ${version}
  **/
 public class McRegionResolver implements FileResolver {
+	private static final Logger logger = LogUtils.logger();
+
 	private final String prefix;
 	private final String extension;
 	private final Pattern pattern;
@@ -45,6 +49,7 @@ public class McRegionResolver implements FileResolver {
 				matcher.reset(name);
 
 				if (!matcher.matches()) {
+					logger.trace("Skipping {}; matcher: {}", name, matcher);
 					continue;
 				}
 
