@@ -29,7 +29,7 @@ public class RegionHandlerTest {
 
 	@Test(dataProvider = "handlersAndEmptyRegions")
 	public void checkHandlerReturnsNull(final RegionHandler handler, final Region region) throws IOException {
-		harnessWR(handler, region, null);
+		harnessWR(handler, region, new Region(region.x(), region.y()));
 	}
 
 	@Test(dataProvider = "handlersAndRegions")

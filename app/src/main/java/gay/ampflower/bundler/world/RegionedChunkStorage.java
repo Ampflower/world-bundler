@@ -3,10 +3,12 @@ package gay.ampflower.bundler.world;
 import gay.ampflower.bundler.utils.LevelCompressor;
 import gay.ampflower.bundler.utils.LongTransiterator;
 import gay.ampflower.bundler.utils.function.FileResolver;
+import gay.ampflower.bundler.utils.pos.Pos2i;
 import gay.ampflower.bundler.world.io.ChunkReader;
 import gay.ampflower.bundler.world.io.ChunkStorage;
 import gay.ampflower.bundler.world.io.ChunkWriter;
 import gay.ampflower.bundler.world.io.RegionHandler;
+import it.unimi.dsi.fastutil.longs.LongIterator;
 
 import java.io.IOError;
 import java.io.IOException;

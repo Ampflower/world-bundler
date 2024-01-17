@@ -29,6 +29,10 @@ public record Region(
 		this(x, y, toChunks(x, y, timestamps, chunks));
 	}
 
+	public Region(int x, int y) {
+		this(x, y, new Chunk[CHUNK_COUNT]);
+	}
+
 	public Chunk getChunk(int x, int y) {
 		return chunks[x * REGION_BOUND + y];
 	}
@@ -39,6 +43,15 @@ public record Region(
 
 	public int size() {
 		return ArrayUtils.sumNullable(chunks, Chunk::size);
+	}
+
+	public boolean isEmpty() {
+		for (final var chunk : chunks) {
+			if (chunk != null && chunk.size() >= 0) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	@Override
@@ -74,13 +87,21 @@ public record Region(
 	@Override
 	public String toString() {
 		final var sb = new StringBuilder(1024).append("Region ").append(x).append(", ").append(y).append('\n');
+		int n = 0;
 		for (int i = 0; i < CHUNK_COUNT; i++) {
 			final var chunk = chunks[i];
 			if (chunk == null || chunk.size() == 0) {
-				sb.append("null\n");
+				n++;
 			} else {
+				if (n > 0) {
+					sb.append("null x").append(n).append('\n');
+					n = 0;
+				}
 				sb.append(chunk).append('\n');
 			}
+		}
+		if (n > 0) {
+			sb.append("null x").append(n).append('\n');
 		}
 		return sb.toString();
 	}

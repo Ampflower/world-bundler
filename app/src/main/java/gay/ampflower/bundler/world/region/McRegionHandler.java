@@ -8,7 +8,7 @@ import gay.ampflower.bundler.world.Region;
 import gay.ampflower.bundler.world.io.ChunkReader;
 import gay.ampflower.bundler.world.io.ChunkWriter;
 import gay.ampflower.bundler.world.io.RegionHandler;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import org.slf4j.Logger;
 
 import javax.annotation.CheckReturnValue;
@@ -23,7 +23,7 @@ import java.util.zip.Deflater;
  * @author Ampflower
  * @since ${version}
  **/
-public final class McRegionHandler implements RegionHandler {
+public class McRegionHandler implements RegionHandler {
 	private static final Logger logger = LogUtils.logger();
 
 	public static final McRegionHandler INSTANCE = new McRegionHandler();
@@ -47,6 +47,8 @@ public final class McRegionHandler implements RegionHandler {
 	public static final byte COMPRESSION_ZLIB = 0x02;
 	public static final byte COMPRESSION_NONE = 0x03;
 
+	private static final int COMPRESSION_MASK_MIN = 0x7F;
+	private static final int COMPRESSION_MASK_ALL = 0xFF;
 	private static final byte COMPRESSION_FLAG_EXTERN = -0x80;
 
 	@Override
@@ -56,31 +58,23 @@ public final class McRegionHandler implements RegionHandler {
 
 	@Override
 	public Region readRegion(final int x, final int y, final InputStream stream, final ChunkReader chunkReader) throws IOException {
-		int sectorOffset = INITIAL_SECTOR_OFFSET;
 		final var buf = new byte[SECTOR];
-
 		final var entries = readFirstSector(stream, buf);
+		final int sectors, sectorOffset;
 
-		int l = 0;
-
-		final var set = new IntOpenHashSet(Region.CHUNK_COUNT);
-
-		for (int i = 0; i < Region.CHUNK_COUNT; i++) {
-			final var entry = entries[i];
-			if (entry == FirstSectorEntry.SENTINEL) {
-				continue;
-			}
-			if (entry.offset == 1) {
-				logger.info("Legacy McRegion detected; timestamps won't be saved.");
-				sectorOffset = 1;
-			}
-			if (!set.add(entry.offset)) {
-				logger.warn("Corrupted chunk entry {}: {}", i, entry);
-			}
-			l = Math.max(entry.offset + entry.sectors, l);
+		{
+			final var sectorMeta = computeSectors(x, y, entries);
+			sectors = sectorMeta.sectors;
+			sectorOffset = sectorMeta.sectorOffset;
 		}
-		if (l <= sectorOffset) {
-			return null;
+
+		if (sectors <= sectorOffset) {
+			return new Region(x, y);
+		}
+		if ((sectors - sectorOffset) * SECTOR <= 0) {
+			logger.warn("Attempted to allocate non-positively-sized array for region[{},{}]; computed ({} - {}) * {} = {}",
+				x, y, sectors, sectorOffset, SECTOR, (sectors - sectorOffset) * SECTOR);
+			return new Region(x, y);
 		}
 
 		final int[] timestamps;
@@ -92,7 +86,7 @@ public final class McRegionHandler implements RegionHandler {
 		}
 
 		final var chunks = new byte[Region.CHUNK_COUNT][];
-		final var bytes = stream.readNBytes((l - sectorOffset) * SECTOR);
+		final var bytes = readIntoMemory(stream, (sectors - sectorOffset) * SECTOR);
 
 		for (int i = 0; i < Region.CHUNK_COUNT; i++) {
 			final var entry = entries[i];
@@ -104,23 +98,25 @@ public final class McRegionHandler implements RegionHandler {
 			int size = (int) INT_HANDLE.get(bytes, offset) - 1;
 
 			int compressorId = bytes[offset + 4];
-			var compressor = LevelCompressor.getMcRegionCompressor(compressorId & 0x7F);
+			var compressor = LevelCompressor.getMcRegionCompressor(compressorId & COMPRESSION_MASK_MIN);
 
 			logger.trace("{} @ {} with compressor {} ({}, {})", size, offset, Integer.toHexString(compressorId), compressorId, compressor);
 
 			if (compressor == null) {
-				logger.warn("Corrupted chunk {}; Invalid compressor: {}", i, compressorId & 0x7F);
+				logger.warn("Corrupted chunk [{},{}][{}]; Invalid compressor: {}", x, y, i, compressorId & COMPRESSION_MASK_MIN);
 				continue;
 			}
 
 			if (compressorId < 0) {
 				chunks[i] = chunkReader.readChunk(i, compressor);
-				if (size != 0 && chunks[i] != null) logger.warn("Corrupted chunk {}; found size {}", i, size);
+				if (size != 0 && chunks[i] != null) {
+					logger.warn("Corrupted chunk [{},{}][{}]; found size {}", x, y, i, size);
+				}
 				if (chunks[i] != null) {
 					IoUtils.verifyNbt(chunks[i], i);
 				}
 			} else if (size == 0) {
-				logger.warn("Corrupted chunk {}; zero-size with compressor {}", i, compressorId & 0xFF);
+				logger.warn("Corrupted chunk [{},{}][{}]; zero-size with compressor {}", x, y, i, compressorId & COMPRESSION_MASK_ALL);
 			} else {
 				chunks[i] = compressor.inflate(bytes, offset + 5, size);
 				IoUtils.verifyNbt(chunks[i], i);
@@ -140,6 +136,39 @@ public final class McRegionHandler implements RegionHandler {
 		}
 
 		return entries;
+	}
+
+	private static SectorMeta computeSectors(final int x, final int y, FirstSectorEntry[] entries) {
+		int sectorOffset = INITIAL_SECTOR_OFFSET;
+		int sectors = 0;
+
+		final var set = new Int2IntOpenHashMap(Region.CHUNK_COUNT);
+		set.defaultReturnValue(-1);
+
+		for (int i = 0; i < Region.CHUNK_COUNT; i++) {
+			final var entry = entries[i];
+			if (entry == FirstSectorEntry.SENTINEL) {
+				continue;
+			}
+			if (entry.offset == 1) {
+				logger.info("Legacy McRegion detected; [{},{}][{}] reads at offset 1, timestamps won't be saved.", x, y, i);
+				sectorOffset = 1;
+			}
+			final var witnessValue = set.put(entry.offset, i);
+			if (witnessValue >= 0) {
+				logger.warn("Corrupted chunk entry [{},{}][{}]: {}", x, y, i, entry);
+			}
+			sectors = Math.max(entry.offset + entry.sectors, sectors);
+		}
+
+		return new SectorMeta(sectors, sectorOffset);
+	}
+
+	/**
+	 * @noinspection MethodMayBeStatic
+	 */
+	protected byte[] readIntoMemory(final InputStream stream, final int len) throws IOException {
+		return stream.readNBytes(len);
 	}
 
 	@Override
@@ -285,4 +314,6 @@ public final class McRegionHandler implements RegionHandler {
 
 		private static final ChunkEntry SENTINEL = new ChunkEntry(0, 0, 0);
 	}
+
+	private record SectorMeta(int sectors, int sectorOffset) { }
 }

@@ -70,7 +70,7 @@ public class BundlerHandler implements RegionHandler {
 		}
 
 		if (chunkCount == 0) {
-			return null;
+			return new Region(x, y);
 		}
 
 		return new Region(x, y, chunks);
