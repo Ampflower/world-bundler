@@ -78,9 +78,18 @@ public class RegionedChunkStorage implements ChunkStorage {
 		}
 	}
 
+	public LongIterator iterateRegionCoordsRaw() throws IOException {
+		return regionResolver.iterate(workingDirectory).iterator();
+	}
+
+	@Override
+	public Iterator<Pos2i> iterateRegionCoords() throws IOException {
+		return new LongTransiterator<>(regionResolver.iterate(workingDirectory).iterator(), Pos2i::new);
+	}
+
 	@Override
 	public Iterator<Region> iterateRegions() throws IOException {
-		return new LongTransiterator<>(regionResolver.iterate(workingDirectory).iterator(), l -> {
+		return new LongTransiterator<>(iterateRegionCoordsRaw(), l -> {
 			int x = (int) (l >>> 32);
 			int y = (int) l;
 

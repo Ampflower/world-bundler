@@ -2,6 +2,7 @@ package gay.ampflower.bundler.world;
 
 import gay.ampflower.bundler.utils.LevelCompressor;
 import gay.ampflower.bundler.utils.function.IntBiFunction;
+import gay.ampflower.bundler.utils.pos.Pos2i;
 import gay.ampflower.bundler.world.io.ChunkStorage;
 
 import java.io.IOException;
@@ -85,6 +86,11 @@ public class AlphaChunkStorage implements ChunkStorage {
 				writeChunk(cx + dx, cy + dy, chunks[dy * Region.REGION_BOUND + dx]);
 			}
 		}
+	}
+
+	@Override
+	public Iterator<Pos2i> iterateRegionCoords() throws IOException {
+		return null;
 	}
 
 	@Override
