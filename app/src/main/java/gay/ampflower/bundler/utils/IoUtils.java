@@ -1,9 +1,13 @@
 package gay.ampflower.bundler.utils;
 
+import gay.ampflower.bundler.nbt.io.NbtReader;
+import gay.ampflower.bundler.nbt.io.SaxNbtReader;
+import gay.ampflower.bundler.nbt.io.SaxTreeWriter;
 import gay.ampflower.bundler.world.region.McRegionHandler;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -98,7 +102,6 @@ public final class IoUtils {
 		return output;
 	}
 
-	// A very dumb check; it doesn't try to parse it.
 	public static void verifyNbt(byte[] nbt, int chunk) {
 		if (nbt[0] != 0x0A) {
 			throw new AssertionError("Invalid start of NBT @ " + chunk + ": " + nbt[0]);
@@ -109,5 +112,17 @@ public final class IoUtils {
 		if ((nbt[1] | nbt[2]) != 0) {
 			logger.warn("Possible corruption: Non-zero name length at chunk {}", chunk);
 		}
+
+		final var stw = new SaxTreeWriter();
+		final var bai = new ByteArrayInputStream(nbt);
+		final var nr = new NbtReader(bai);
+
+		try {
+			SaxNbtReader.parse(stw, nr);
+		} catch (IOException ioe) {
+			throw new AssertionError(ioe);
+		}
+
+		logger.trace("Got {} -> {}", stw.getRootName(), stw.getRoot());
 	}
 }

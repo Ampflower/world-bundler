@@ -5,6 +5,7 @@ import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HexFormat;
 import java.util.function.ToIntFunction;
 
 /**
@@ -19,9 +20,12 @@ public final class ArrayUtils {
 	public static final VarHandle FLOATS_BIG_ENDIAN = MethodHandles.byteArrayViewVarHandle(float[].class, ByteOrder.BIG_ENDIAN);
 	public static final VarHandle DOUBLES_BIG_ENDIAN = MethodHandles.byteArrayViewVarHandle(double[].class, ByteOrder.BIG_ENDIAN);
 
+	public static final int BYTE_STRIDE = 1;
 	public static final int SHORT_STRIDE = 2;
 	public static final int INT_STRIDE = 4;
 	public static final int LONG_STRIDE = 8;
+	public static final int FLOAT_STRIDE = 4;
+	public static final int DOUBLE_STRIDE = 8;
 
 	public static final byte[] SENTINEL_BYTES = new byte[0];
 
@@ -31,11 +35,23 @@ public final class ArrayUtils {
 		return array;
 	}
 
+	public static void copyBigEndianShorts(byte[] read, int roff, short[] write, int woff, int len) {
+		for (int i = 0; i < len; i++) {
+			write[woff + i] = (short) SHORTS_BIG_ENDIAN.get(read, roff + i * SHORT_STRIDE);
+		}
+	}
+
 	public static void copy(byte[] read, int roff, int[] write, int woff, int len, ByteOrder order) {
 		final var handle = MethodHandles.byteArrayViewVarHandle(int[].class, order);
 
 		for (int i = 0; i < len; i++) {
 			write[woff + i] = (int) handle.get(read, roff + i * INT_STRIDE);
+		}
+	}
+
+	public static void copyBigEndianInts(byte[] read, int roff, int[] write, int woff, int len) {
+		for (int i = 0; i < len; i++) {
+			write[woff + i] = (int) INTS_BIG_ENDIAN.get(read, roff + i * INT_STRIDE);
 		}
 	}
 
@@ -50,6 +66,12 @@ public final class ArrayUtils {
 	public static void copyBigEndianInts(byte[] from, int[] to) {
 		for (int i = 0; i < to.length; i++) {
 			to[i] = (int) INTS_BIG_ENDIAN.get(from, i << 2);
+		}
+	}
+
+	public static void copyBigEndianLongs(byte[] read, int roff, long[] write, int woff, int len) {
+		for (int i = 0; i < len; i++) {
+			write[woff + i] = (long) LONGS_BIG_ENDIAN.get(read, roff + i * LONG_STRIDE);
 		}
 	}
 
@@ -120,5 +142,36 @@ public final class ArrayUtils {
 			return def;
 		}
 		return function.applyAsInt(object);
+	}
+
+	public static String toString(Object array) {
+		if (array instanceof boolean[] booleans) {
+			return Arrays.toString(booleans);
+		}
+		if (array instanceof byte[] bytes) {
+			return HexFormat.of().formatHex(bytes);
+		}
+		if (array instanceof short[] shorts) {
+			return Arrays.toString(shorts);
+		}
+		if (array instanceof char[] chars) {
+			return Arrays.toString(chars);
+		}
+		if (array instanceof int[] ints) {
+			return Arrays.toString(ints);
+		}
+		if (array instanceof long[] longs) {
+			return Arrays.toString(longs);
+		}
+		if (array instanceof float[] floats) {
+			return Arrays.toString(floats);
+		}
+		if (array instanceof double[] doubles) {
+			return Arrays.toString(doubles);
+		}
+		if (array instanceof Object[] objects) {
+			return Arrays.toString(objects);
+		}
+		return "invalid: " + array;
 	}
 }
