@@ -171,6 +171,12 @@ public record Region(
 		return regionY * REGION_BOUND + getChunkY(i);
 	}
 
+	public static int getChunkIndex(int x, int y) {
+		x &= BIT_MASK;
+		y &= BIT_MASK;
+		return (y << BIT_SHIFT) | x;
+	}
+
 	private static Chunk[] toChunks(int x, int y, int[] timestamps, byte[][] arrays) {
 		x *= REGION_BOUND;
 		y *= REGION_BOUND;

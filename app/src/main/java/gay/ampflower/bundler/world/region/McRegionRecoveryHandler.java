@@ -1,11 +1,14 @@
 package gay.ampflower.bundler.world.region;
 
+import gay.ampflower.bundler.nbt.Nbt;
 import gay.ampflower.bundler.nbt.NbtCompound;
 import gay.ampflower.bundler.utils.*;
+import gay.ampflower.bundler.world.Chunk;
 import gay.ampflower.bundler.world.PotentialChunk;
 import gay.ampflower.bundler.world.Region;
 import gay.ampflower.bundler.world.io.ChunkReader;
 import gay.ampflower.bundler.world.io.RegionHandler;
+import gay.ampflower.bundler.world.util.ChunkDataUtil;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import org.slf4j.Logger;
 
@@ -78,30 +81,28 @@ public final class McRegionRecoveryHandler extends McRegionHandler implements Re
 		}
 
 		final var chunks = new ArrayList<PotentialChunk>();
+		int previous = region.popCount();
 
 		for (int i = 0; i < buffer.length; i += SECTOR_SNIFF) {
 			final int expectedSize = (int) INT_HANDLE.get(buffer, i);
 			final int compressorByte = buffer[i + 4] & COMPRESSION_MASK_MIN;
 			PotentialChunk chunk = tryInflate(buffer, i + 5, expectedSize, LevelCompressor.getMcRegionCompressor(compressorByte));
 
-			if (chunk != null) {
-				chunks.add(chunk);
+			if (add(region, chunks, chunk)) {
 				continue;
 			}
 
 			System.arraycopy(buffer, i, buf, 0, 8);
 			chunk = tryInflate(buffer, i, -1, LevelCompressor.getFileCompressor(buf));
 
-			if (chunk != null) {
-				chunks.add(chunk);
+			if (add(region, chunks, chunk)) {
 				continue;
 			}
 
 			System.arraycopy(buffer, i + 5, buf, 0, 8);
 			chunk = tryInflate(buffer, i + 5, -1, LevelCompressor.getFileCompressor(buf));
 
-			if (chunk != null) {
-				chunks.add(chunk);
+			if (add(region, chunks, chunk)) {
 				continue;
 			}
 
@@ -109,8 +110,11 @@ public final class McRegionRecoveryHandler extends McRegionHandler implements Re
 		}
 
 		if (!chunks.isEmpty()) {
-			logger.info("Recovered {} chunks from [{},{}]; previously {}", chunks.size(), x, y, region.popCount());
+			logger.info("{} chunks of foreign format in [{},{}]", chunks.size(), x, y);
+			logger.trace("Failed chunks: {}", chunks);
 		}
+
+		logger.info("Recovered {} chunks from [{},{}]; previously {}", region.popCount(), x, y, previous);
 
 		return region.meta(chunks);
 	}
@@ -246,5 +250,41 @@ public final class McRegionRecoveryHandler extends McRegionHandler implements Re
 			logger.warn("Corrupted NBT @ [{},{}][{}]", x, y, i, error);
 		}
 		return null;
+	}
+
+	private static boolean add(Region region, ArrayList<PotentialChunk> chunks, PotentialChunk chunk) {
+		if (chunk == null) {
+			return false;
+		}
+
+		final var pos = ChunkDataUtil.getPosition(chunk.parsed());
+		if (pos == null) {
+			chunks.add(chunk);
+		} else {
+			final int c = Region.getChunkIndex(pos.x(), pos.y());
+			final var regionChunks = region.chunks();
+			final var regionChunk = regionChunks[c];
+
+			if (regionChunk == null) {
+				regionChunks[c] = new Chunk(pos.x(), pos.y(), -1, chunk.bytes(), chunk.parsed());
+				return true;
+			}
+
+			if (!Arrays.equals(regionChunk.array(), chunk.bytes())) {
+				final var regionLastUpdate = ChunkDataUtil.getLastUpdate((Nbt<?>) regionChunk.meta());
+				final var chunkLastUpdate = ChunkDataUtil.getLastUpdate((Nbt<?>) chunk.parsed());
+
+				if (chunkLastUpdate > regionLastUpdate) {
+					logger.debug("Favouring [{},{}][{},{}] as it is newer; recovered: {} vs. old: {}",
+						region.x(), region.y(), pos.x(), pos.y(), chunkLastUpdate, regionLastUpdate);
+					regionChunks[c] = new Chunk(pos.x(), pos.y(), -1, chunk.bytes(), chunk.parsed());
+					return true;
+				}
+
+				logger.debug("Dropping [{},{}][{},{}]", region.x(), region.y(), pos.x(), pos.y());
+				logger.trace("{} was favoured over {}", regionChunk.meta(), chunk.parsed());
+			}
+		}
+		return true;
 	}
 }
