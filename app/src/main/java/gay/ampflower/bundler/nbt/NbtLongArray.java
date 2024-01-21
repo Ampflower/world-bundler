@@ -38,6 +38,11 @@ public final class NbtLongArray implements Nbt<long[]> {
 	}
 
 	@Override
+	public StringBuilder asStringifiedNbt(final StringBuilder builder) {
+		return NbtUtil.truncWith(NbtUtil.toString(builder.append("[L;"), this.backing), ']');
+	}
+
+	@Override
 	public String toString() {
 		return "[L;" + Arrays.toString(this.backing) + ']';
 	}

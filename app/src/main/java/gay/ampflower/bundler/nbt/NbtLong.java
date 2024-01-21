@@ -47,6 +47,11 @@ public record NbtLong(long value) implements NbtNumber<Long> {
 	}
 
 	@Override
+	public StringBuilder asStringifiedNbt(final StringBuilder builder) {
+		return builder.append(value).append('l');
+	}
+
+	@Override
 	public String toString() {
 		return asString() + 'l';
 	}

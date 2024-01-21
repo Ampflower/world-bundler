@@ -47,6 +47,11 @@ public record NbtDouble(double value) implements NbtNumber<Double> {
 	}
 
 	@Override
+	public StringBuilder asStringifiedNbt(final StringBuilder builder) {
+		return builder.append(value).append('d');
+	}
+
+	@Override
 	public String toString() {
 		return asString() + 'd';
 	}

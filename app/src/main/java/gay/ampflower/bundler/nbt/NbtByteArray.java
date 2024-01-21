@@ -38,6 +38,11 @@ public final class NbtByteArray implements Nbt<byte[]> {
 	}
 
 	@Override
+	public StringBuilder asStringifiedNbt(final StringBuilder builder) {
+		return NbtUtil.truncWith(NbtUtil.toString(builder.append("[B;"), backing), ']');
+	}
+
+	@Override
 	public String toString() {
 		return "NbtByteArray" + Arrays.toString(this.backing);
 	}

@@ -154,7 +154,19 @@ public final class NbtCompound implements Nbt<Map<String, Nbt<?>>> {
 	}
 
 	@Override
+	public StringBuilder asStringifiedNbt(final StringBuilder builder) {
+		if (backing.isEmpty()) {
+			return builder.append("{}");
+		}
+		builder.append('{');
+		for (final var entry : backing.entrySet()) {
+			entry.getValue().asStringifiedNbt(builder.append(entry.getKey()).append(':')).append(',');
+		}
+		return NbtUtil.truncWith(builder, '}');
+	}
+
+	@Override
 	public String toString() {
-		return "NbtCompound[" + backing + ']';
+		return asStringifiedNbt(new StringBuilder("NbtCompound")).toString();
 	}
 }

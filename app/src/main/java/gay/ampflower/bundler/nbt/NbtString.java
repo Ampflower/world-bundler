@@ -58,6 +58,21 @@ public record NbtString(String value) implements Nbt<String> {
 	}
 
 	@Override
+	public StringBuilder asStringifiedNbt(final StringBuilder builder) {
+		final int start = builder.length() + 1;
+		builder.append('"').append(value).append('"');
+		int end = builder.length() - 1;
+		for (int i = start; i < end; i++) {
+			if (builder.charAt(i) == '"') {
+				builder.insert(i, '\\');
+				i++;
+				end++;
+			}
+		}
+		return builder;
+	}
+
+	@Override
 	public String toString() {
 		return '"' + this.value + '"';
 	}

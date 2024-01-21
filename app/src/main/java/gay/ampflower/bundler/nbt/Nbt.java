@@ -79,6 +79,12 @@ public sealed interface Nbt<T> permits NbtArray, NbtByteArray, NbtCompound, NbtI
 		throw new UnsupportedOperationException();
 	}
 
+	default String asStringifiedNbt() {
+		return asStringifiedNbt(new StringBuilder()).toString();
+	}
+
+	StringBuilder asStringifiedNbt(StringBuilder builder);
+
 	default void push(String key, Nbt<?> value) {
 		throw new UnsupportedOperationException("Attempted to push " + key + " -> " + value + " to " + this);
 	}

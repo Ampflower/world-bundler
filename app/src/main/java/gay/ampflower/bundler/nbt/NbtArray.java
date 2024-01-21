@@ -151,6 +151,11 @@ public final class NbtArray<T extends Nbt<?>> implements Nbt<T[]> {
 	}
 
 	@Override
+	public StringBuilder asStringifiedNbt(StringBuilder builder) {
+		return NbtUtil.toString(builder.append('['), backing).append(']');
+	}
+
+	@Override
 	public String toString() {
 		return "NbtArray<" + this.type + ">" + ArrayUtils.toString(backing);
 	}

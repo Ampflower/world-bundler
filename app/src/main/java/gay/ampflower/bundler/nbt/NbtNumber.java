@@ -25,4 +25,9 @@ public sealed interface NbtNumber<T extends Number> extends Nbt<T> permits NbtBy
 
 	@Override
 	String asString();
+
+	@Override
+	default String asStringifiedNbt() {
+		return this.toString();
+	}
 }

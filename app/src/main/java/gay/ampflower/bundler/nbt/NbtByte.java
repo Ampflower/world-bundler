@@ -57,6 +57,11 @@ public record NbtByte(byte value) implements NbtNumber<Byte> {
 	}
 
 	@Override
+	public StringBuilder asStringifiedNbt(final StringBuilder builder) {
+		return builder.append(value).append('b');
+	}
+
+	@Override
 	public String toString() {
 		return asString() + 'b';
 	}

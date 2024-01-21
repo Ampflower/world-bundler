@@ -47,6 +47,11 @@ public record NbtFloat(float value) implements NbtNumber<Float> {
 	}
 
 	@Override
+	public StringBuilder asStringifiedNbt(final StringBuilder builder) {
+		return builder.append(value).append('f');
+	}
+
+	@Override
 	public String toString() {
 		return asString() + 'f';
 	}

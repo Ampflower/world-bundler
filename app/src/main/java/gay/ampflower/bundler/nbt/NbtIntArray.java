@@ -38,6 +38,11 @@ public final class NbtIntArray implements Nbt<int[]> {
 	}
 
 	@Override
+	public StringBuilder asStringifiedNbt(final StringBuilder builder) {
+		return NbtUtil.truncWith(NbtUtil.toString(builder.append("[I;"), this.backing), ']');
+	}
+
+	@Override
 	public String toString() {
 		return "NbtIntArray" + Arrays.toString(this.backing);
 	}

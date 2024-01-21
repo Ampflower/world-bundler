@@ -168,6 +168,18 @@ public final class NbtList<T extends Nbt<?>> implements Nbt<List<T>> {
 	}
 
 	@Override
+	public StringBuilder asStringifiedNbt(final StringBuilder builder) {
+		if (this.backing.isEmpty()) {
+			return builder.append("[]");
+		}
+		builder.append('[');
+		for (final var value : backing) {
+			value.asStringifiedNbt(builder).append(',');
+		}
+		return NbtUtil.truncWith(builder, ']');
+	}
+
+	@Override
 	public String toString() {
 		return "NbtList<" + this.type + ">" + this.backing;
 	}

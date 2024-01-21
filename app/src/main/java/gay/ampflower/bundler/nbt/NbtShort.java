@@ -47,6 +47,11 @@ public record NbtShort(short value) implements NbtNumber<Short> {
 	}
 
 	@Override
+	public StringBuilder asStringifiedNbt(final StringBuilder builder) {
+		return builder.append(value).append('s');
+	}
+
+	@Override
 	public String toString() {
 		return asString() + 's';
 	}

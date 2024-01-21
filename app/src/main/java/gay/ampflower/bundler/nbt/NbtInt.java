@@ -47,6 +47,11 @@ public record NbtInt(int value) implements NbtNumber<Integer> {
 	}
 
 	@Override
+	public StringBuilder asStringifiedNbt(final StringBuilder builder) {
+		return builder.append(value);
+	}
+
+	@Override
 	public String toString() {
 		return asString();
 	}
