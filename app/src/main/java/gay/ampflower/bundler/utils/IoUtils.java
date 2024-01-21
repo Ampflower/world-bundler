@@ -124,6 +124,9 @@ public final class IoUtils {
 
 		try {
 			SaxNbtReader.parse(stw, nr);
+		} catch (OutOfMemoryError oome) {
+			logger.warn("Exhausted available memory reading chunk @ {}", chunk, oome);
+			throw new AssertionError(oome);
 		} catch (IOException ioe) {
 			throw new AssertionError(ioe);
 		}
