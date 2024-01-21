@@ -172,16 +172,16 @@ public final class McRegionRecoveryHandler extends McRegionHandler implements Re
 	}
 
 	@Override
-	protected byte[] readChunk(final int x, final int y, final int i, final int size, final int compressorId,
-										final ChunkReader chunkReader, final LevelCompressor compressor, final byte[] bytes,
-										final int offset) throws IOException {
+	protected PotentialChunk readChunk(final int x, final int y, final int i, final int size, final int compressorId,
+												  final ChunkReader chunkReader, final LevelCompressor compressor, final byte[] bytes,
+												  final int offset) throws IOException {
 		if (compressorId < 0) {
 			final byte[] chunk = chunkReader.readChunk(i, compressor);
 			if (size != 0 && chunk != null) {
 				logger.warn("Corrupted chunk [{},{}][{}]; found size {} for external chunk", x, y, i, size);
 			}
-			if (chunk != null) verify(x, y, i, chunk);
-			return chunk;
+			final NbtCompound nbt = chunk != null ? verify(x, y, i, chunk) : null;
+			return new PotentialChunk(chunk, nbt);
 		}
 
 		if (size == 0) {
@@ -198,12 +198,12 @@ public final class McRegionRecoveryHandler extends McRegionHandler implements Re
 
 		try {
 			final byte[] chunk = compressor.inflate(bytes, offset + 5, size);
-			verify(x, y, i, chunk);
-			return chunk;
+			final NbtCompound nbt = verify(x, y, i, chunk);
+			return new PotentialChunk(chunk, nbt);
 		} catch (IOException ioe) {
 			logger.warn("Failed to inflate [{},{}][{}] @ {} with byte[{}]; total size: {}, dumping",
 				x, y, i, offset + 5, size, bytes.length, ioe);
-			return Arrays.copyOfRange(bytes, offset + 5, size);
+			return new PotentialChunk(Arrays.copyOfRange(bytes, offset + 5, size), null);
 		}
 	}
 
@@ -239,11 +239,12 @@ public final class McRegionRecoveryHandler extends McRegionHandler implements Re
 		return null;
 	}
 
-	private static void verify(final int x, final int y, final int i, final byte[] chunk) {
+	private static NbtCompound verify(final int x, final int y, final int i, final byte[] chunk) {
 		try {
-			IoUtils.verifyNbt(chunk, i);
+			return IoUtils.verifyNbt(chunk, i);
 		} catch (AssertionError error) {
 			logger.warn("Corrupted NBT @ [{},{}][{}]", x, y, i, error);
 		}
+		return null;
 	}
 }

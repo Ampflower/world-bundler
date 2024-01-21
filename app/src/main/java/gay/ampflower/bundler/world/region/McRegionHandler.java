@@ -1,9 +1,12 @@
 package gay.ampflower.bundler.world.region;
 
+import gay.ampflower.bundler.nbt.NbtCompound;
 import gay.ampflower.bundler.utils.ArrayUtils;
 import gay.ampflower.bundler.utils.IoUtils;
 import gay.ampflower.bundler.utils.LevelCompressor;
 import gay.ampflower.bundler.utils.LogUtils;
+import gay.ampflower.bundler.world.Chunk;
+import gay.ampflower.bundler.world.PotentialChunk;
 import gay.ampflower.bundler.world.Region;
 import gay.ampflower.bundler.world.io.ChunkReader;
 import gay.ampflower.bundler.world.io.ChunkWriter;
@@ -85,7 +88,7 @@ public class McRegionHandler implements RegionHandler {
 			timestamps = new int[Region.CHUNK_COUNT];
 		}
 
-		final var chunks = new byte[Region.CHUNK_COUNT][];
+		final var chunks = new PotentialChunk[Region.CHUNK_COUNT];
 		final var bytes = readIntoMemory(stream, (sectors - sectorOffset) * SECTOR);
 
 		for (int i = 0; i < Region.CHUNK_COUNT; i++) {
@@ -122,7 +125,7 @@ public class McRegionHandler implements RegionHandler {
 			chunks[i] = readChunk(x, y, i, size, compressorId, chunkReader, compressor, bytes, offset);
 		}
 
-		return new Region(x, y, timestamps, chunks);
+		return new Region(x, y, toChunks(x, y, timestamps, chunks));
 	}
 
 	static FirstSectorEntry[] readFirstSector(final InputStream stream, final byte[] buf) throws IOException {
@@ -170,19 +173,20 @@ public class McRegionHandler implements RegionHandler {
 		return stream.readNBytes(len);
 	}
 
-	protected byte[] readChunk(final int x, final int y, final int i, final int size, final int compressorId,
-										final ChunkReader chunkReader, final LevelCompressor compressor, final byte[] bytes,
-										final int offset) throws IOException {
+	protected PotentialChunk readChunk(final int x, final int y, final int i, final int size, final int compressorId,
+												  final ChunkReader chunkReader, final LevelCompressor compressor, final byte[] bytes,
+												  final int offset) throws IOException {
 		final byte[] chunk;
+		NbtCompound nbt = null;
 		if (compressorId < 0) {
 			chunk = chunkReader.readChunk(i, compressor);
 			if (size != 0 && chunk != null) {
 				logger.warn("Corrupted chunk [{},{}][{}]; found size {} for external chunk", x, y, i, size);
 			}
 			if (chunk != null) {
-				IoUtils.verifyNbt(chunk, i);
+				nbt = IoUtils.verifyNbt(chunk, i);
 			}
-			return chunk;
+			return new PotentialChunk(chunk, nbt);
 		}
 
 		if (size == 0) {
@@ -198,8 +202,27 @@ public class McRegionHandler implements RegionHandler {
 		}
 
 		chunk = compressor.inflate(bytes, offset + 5, size);
-		IoUtils.verifyNbt(chunk, i);
-		return chunk;
+		nbt = IoUtils.verifyNbt(chunk, i);
+		return new PotentialChunk(chunk, nbt);
+	}
+
+	private static Chunk[] toChunks(int x, int y, int[] timestamps, PotentialChunk[] arrays) {
+		x *= Region.REGION_BOUND;
+		y *= Region.REGION_BOUND;
+		final var chunks = new Chunk[arrays.length];
+
+		for (int i = 0; i < arrays.length; i++) {
+			if (arrays[i] != null) {
+				chunks[i] = new Chunk(
+					x + Region.getChunkX(i),
+					y + Region.getChunkY(i),
+					timestamps[i],
+					arrays[i].bytes(),
+					arrays[i].parsed());
+			}
+		}
+
+		return chunks;
 	}
 
 	@Override
