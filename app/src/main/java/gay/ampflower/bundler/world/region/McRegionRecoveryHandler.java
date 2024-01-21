@@ -1,6 +1,8 @@
 package gay.ampflower.bundler.world.region;
 
+import gay.ampflower.bundler.nbt.NbtCompound;
 import gay.ampflower.bundler.utils.*;
+import gay.ampflower.bundler.world.PotentialChunk;
 import gay.ampflower.bundler.world.Region;
 import gay.ampflower.bundler.world.io.ChunkReader;
 import gay.ampflower.bundler.world.io.RegionHandler;
@@ -75,31 +77,31 @@ public final class McRegionRecoveryHandler extends McRegionHandler implements Re
 			logger.warn("The file may have been totally overwritten, with low chance of data recovery.");
 		}
 
-		final var chunks = new ArrayList<byte[]>();
+		final var chunks = new ArrayList<PotentialChunk>();
 
 		for (int i = 0; i < buffer.length; i += SECTOR_SNIFF) {
 			final int expectedSize = (int) INT_HANDLE.get(buffer, i);
 			final int compressorByte = buffer[i + 4] & COMPRESSION_MASK_MIN;
-			byte[] bytes = tryInflate(buffer, i + 5, expectedSize, LevelCompressor.getMcRegionCompressor(compressorByte));
+			PotentialChunk chunk = tryInflate(buffer, i + 5, expectedSize, LevelCompressor.getMcRegionCompressor(compressorByte));
 
-			if (bytes != null) {
-				chunks.add(bytes);
+			if (chunk != null) {
+				chunks.add(chunk);
 				continue;
 			}
 
 			System.arraycopy(buffer, i, buf, 0, 8);
-			bytes = tryInflate(buffer, i, -1, LevelCompressor.getFileCompressor(buf));
+			chunk = tryInflate(buffer, i, -1, LevelCompressor.getFileCompressor(buf));
 
-			if (bytes != null) {
-				chunks.add(bytes);
+			if (chunk != null) {
+				chunks.add(chunk);
 				continue;
 			}
 
 			System.arraycopy(buffer, i + 5, buf, 0, 8);
-			bytes = tryInflate(buffer, i + 5, -1, LevelCompressor.getFileCompressor(buf));
+			chunk = tryInflate(buffer, i + 5, -1, LevelCompressor.getFileCompressor(buf));
 
-			if (bytes != null) {
-				chunks.add(bytes);
+			if (chunk != null) {
+				chunks.add(chunk);
 				continue;
 			}
 
@@ -110,7 +112,7 @@ public final class McRegionRecoveryHandler extends McRegionHandler implements Re
 			logger.info("Recovered {} chunks from [{},{}]; previously {}", chunks.size(), x, y, region.popCount());
 		}
 
-		return region;
+		return region.meta(chunks);
 	}
 
 	private static SectorMeta computeSectors(final int x, final int y, final short[] mask, FirstSectorEntry[] entries) {
@@ -206,8 +208,8 @@ public final class McRegionRecoveryHandler extends McRegionHandler implements Re
 	}
 
 	@Nullable
-	private static byte[] tryInflate(final @Nonnull byte[] buffer, final int offset, final int expectedSize,
-												final @Nullable LevelCompressor compressor) {
+	private static PotentialChunk tryInflate(final @Nonnull byte[] buffer, final int offset, final int expectedSize,
+														  final @Nullable LevelCompressor compressor) {
 		if (compressor == null) {
 			return null;
 		}
@@ -226,11 +228,12 @@ public final class McRegionRecoveryHandler extends McRegionHandler implements Re
 				logger.trace("Bytes mismatch, expected {}, got {}", expectedSize, data.length);
 			}
 
-			IoUtils.verifyNbt(data, -1);
+			final var nbt = IoUtils.verifyNbt(data, offset);
 
 			logger.info("Successfully read seemingly valid data @ {}", offset);
-			return data;
-		} catch (IOException | IndexOutOfBoundsException | AssertionError error) {
+			logger.trace("Associated data: {}", nbt);
+			return new PotentialChunk(data, nbt);
+		} catch (IOException | IndexOutOfBoundsException | NegativeArraySizeException | AssertionError error) {
 			logger.trace("Failed to read data @ {} with compressor {}", offset, compressor, error);
 		}
 		return null;

@@ -1,5 +1,6 @@
 package gay.ampflower.bundler.utils;
 
+import gay.ampflower.bundler.nbt.NbtCompound;
 import gay.ampflower.bundler.nbt.io.NbtReader;
 import gay.ampflower.bundler.nbt.io.SaxNbtReader;
 import gay.ampflower.bundler.nbt.io.SaxTreeWriter;
@@ -11,6 +12,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 /**
@@ -102,15 +105,17 @@ public final class IoUtils {
 		return output;
 	}
 
-	public static void verifyNbt(byte[] nbt, int chunk) {
+	public static NbtCompound verifyNbt(byte[] nbt, int chunk) {
 		if (nbt[0] != 0x0A) {
 			throw new AssertionError("Invalid start of NBT @ " + chunk + ": " + nbt[0]);
 		}
 		if (nbt[nbt.length - 1] != 0x00) {
 			throw new AssertionError("Invalid end of NBT @ " + chunk + ": " + nbt[nbt.length - 1]);
 		}
-		if ((nbt[1] | nbt[2]) != 0) {
-			logger.warn("Possible corruption: Non-zero name length at chunk {}", chunk);
+		final int length = ((short) ArrayUtils.SHORTS_BIG_ENDIAN.get(nbt, 1)) & 0xFFFF;
+		if (length != 0) {
+			logger.warn("Possible corruption: Non-zero name length at chunk {}: Got {}: {}",
+				chunk, length, getStringTrunc(nbt, 3, length, 64));
 		}
 
 		final var stw = new SaxTreeWriter();
@@ -124,5 +129,18 @@ public final class IoUtils {
 		}
 
 		logger.trace("Got {} -> {}", stw.getRootName(), stw.getRoot());
+
+		return (NbtCompound) stw.getRoot();
+	}
+
+	public static String getStringTrunc(byte[] bytes, int offset, int len, int max) {
+		if (len > max) {
+			return URLEncoder.encode(getStringSafe(bytes, offset, max), StandardCharsets.UTF_8) + '\u2026';
+		}
+		return URLEncoder.encode(getStringSafe(bytes, offset, len), StandardCharsets.UTF_8);
+	}
+
+	public static String getStringSafe(byte[] bytes, int offset, int len) {
+		return new String(bytes, offset, Math.min(len, bytes.length - offset), StandardCharsets.UTF_8);
 	}
 }

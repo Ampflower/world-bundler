@@ -14,7 +14,8 @@ import java.util.Objects;
 public record Region(
 	int x,
 	int y,
-	Chunk[] chunks
+	Chunk[] chunks,
+	Object meta
 ) {
 	public static final int REGION_BOUND = 32;
 	public static final int BIT_SHIFT = 5;
@@ -23,6 +24,10 @@ public record Region(
 
 	public Region {
 		if (chunks.length != CHUNK_COUNT) throw new IllegalArgumentException("chunks[" + chunks.length + "]");
+	}
+
+	public Region(int x, int y, Chunk[] chunks) {
+		this(x, y, chunks, null);
 	}
 
 	public Region(int x, int y, int[] timestamps, byte[][] chunks) {
@@ -78,7 +83,10 @@ public record Region(
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		final Region region = (Region) o;
-		return x == region.x && y == region.y && chunkArraysEqual(chunks, region.chunks);
+		return x == region.x
+			&& y == region.y
+			&& Objects.equals(meta, region.meta)
+			&& chunkArraysEqual(chunks, region.chunks);
 	}
 
 	private static boolean chunkArraysEqual(final Chunk[] a, final Chunk[] b) {
@@ -96,9 +104,17 @@ public record Region(
 		return (an & bn) || (!an && a.equals(b));
 	}
 
+	public Region pos(int x, int y) {
+		return new Region(x, y, chunks, meta);
+	}
+
+	public Region meta(Object meta) {
+		return new Region(x, y, chunks, meta);
+	}
+
 	@Override
 	public int hashCode() {
-		int result = Objects.hash(x, y);
+		int result = Objects.hash(x, y, meta);
 		result = 31 * result + Arrays.hashCode(chunks);
 		return result;
 	}
@@ -121,6 +137,19 @@ public record Region(
 		}
 		if (n > 0) {
 			sb.append("null x").append(n).append('\n');
+		}
+		if (meta instanceof Iterable<?> iterable) {
+			sb.append("\nmeta:\n");
+			for (final var i : iterable) {
+				sb.append(i).append('\n');
+			}
+		} else if (meta instanceof Object[] array) {
+			sb.append("\nmeta:\n");
+			for (final var i : array) {
+				sb.append(i).append('\n');
+			}
+		} else if (meta != null) {
+			sb.append("\nmeta: ").append(meta).append('\n');
 		}
 		return sb.toString();
 	}
