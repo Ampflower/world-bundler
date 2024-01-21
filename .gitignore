@@ -1,5 +1,9 @@
 ### Application ###
 files.*
+*.mcr
+*.mca
+*.linear
+*.zip*
 
 ### Gradle ###
 .gradle
