@@ -34,6 +34,11 @@ public class AlphaChunkStorage implements ChunkStorage {
 	}
 
 	@Override
+	public void init() throws IOException {
+		Files.createDirectories(workingDirectory);
+	}
+
+	@Override
 	public Chunk readChunk(final int x, final int y) throws IOException {
 		final var path = workingDirectory.resolve(chunkResolver.apply(x, y));
 

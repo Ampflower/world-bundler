@@ -12,6 +12,8 @@ import java.util.Iterator;
  * @since ${version}
  **/
 public interface ChunkStorage {
+	void init() throws IOException;
+
 	Chunk readChunk(int x, int y) throws IOException;
 
 	void writeChunk(int x, int y, Chunk chunk) throws IOException;

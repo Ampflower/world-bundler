@@ -39,6 +39,11 @@ public class RegionedChunkStorage implements ChunkStorage {
 	}
 
 	@Override
+	public void init() throws IOException {
+		Files.createDirectories(workingDirectory);
+	}
+
+	@Override
 	public Chunk readChunk(final int x, final int y) throws IOException {
 		// FIXME: Optimise this better
 		return readRegion(x >> 5, y >> 5).getChunk(x & Region.BIT_MASK, y & Region.BIT_MASK);
