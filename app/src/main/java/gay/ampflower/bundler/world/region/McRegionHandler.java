@@ -316,11 +316,11 @@ public class McRegionHandler implements RegionHandler {
 				entries[i] = ChunkEntry.SENTINEL;
 			} else if (sectors > MAX_SECTORS) {
 				entries[i] = new ChunkEntry(offset, -1, timestamp);
-				logger.info("Signaling extern: {}", i);
+				logger.trace("Signaling extern: {}", i);
 				offset++;
 			} else {
 				entries[i] = new ChunkEntry(offset, sectors, timestamp);
-				logger.info("Preparing {} -> {}", offset, sectors);
+				logger.trace("Preparing {} -> {}", offset, sectors);
 				offset += sectors;
 			}
 		}

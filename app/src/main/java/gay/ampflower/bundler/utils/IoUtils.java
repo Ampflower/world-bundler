@@ -93,7 +93,7 @@ public final class IoUtils {
 
 		final int sec = McRegionHandler.sectors(written);
 		s += sec;
-		logger.info("Written {} (~{} sectors), {} total", written, sec, s);
+		logger.trace("Written {} (~{} sectors), {} total", written, sec, s);
 	}
 
 	public static int[] readBigEndian(InputStream stream, byte[] buf) throws IOException {
