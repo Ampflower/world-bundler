@@ -120,23 +120,6 @@ public class McRegionHandler implements RegionHandler {
 			}
 
 			chunks[i] = readChunk(x, y, i, size, compressorId, chunkReader, compressor, bytes, offset);
-			if (true) {
-				continue;
-			}
-			if (compressorId < 0) {
-				chunks[i] = chunkReader.readChunk(i, compressor);
-				if (size != 0 && chunks[i] != null) {
-					logger.warn("Corrupted chunk [{},{}][{}]; found size {}", x, y, i, size);
-				}
-				if (chunks[i] != null) {
-					IoUtils.verifyNbt(chunks[i], i);
-				}
-			} else if (size == 0) {
-				logger.warn("Corrupted chunk [{},{}][{}]; zero-size with compressor {}", x, y, i, compressorId & COMPRESSION_MASK_ALL);
-			} else {
-				chunks[i] = compressor.inflate(bytes, offset + 5, size);
-				IoUtils.verifyNbt(chunks[i], i);
-			}
 		}
 
 		return new Region(x, y, timestamps, chunks);
