@@ -195,6 +195,12 @@ public class McRegionHandler implements RegionHandler {
 			return null;
 		}
 
+		if (size < 0) {
+			logger.warn("Corrupted chunk [{},{}][{}]; negative size with compressor {}",
+				x, y, i, compressorId & COMPRESSION_MASK_ALL);
+			return null;
+		}
+
 		if (offset + 5 + size > bytes.length) {
 			logger.warn("Corrupted chunk [{},{}][{}]; overread: off: {}, len: {}, total: {}",
 				x, y, i, offset + 5, size, bytes.length);

@@ -112,6 +112,9 @@ public class NbtReader implements AutoCloseable {
 
 	public short[] readShortArray() throws IOException {
 		final int size = readInt();
+		if (size > 0x00FFFFFF) {
+			throw new OutOfMemoryError();
+		}
 		final short[] shorts = new short[size];
 		int read = 0, ic;
 		while (read < size) {
@@ -128,6 +131,9 @@ public class NbtReader implements AutoCloseable {
 
 	public int[] readIntArray() throws IOException {
 		final int size = readInt();
+		if (size > 0x00FFFFFF) {
+			throw new OutOfMemoryError();
+		}
 		final int[] ints = new int[size];
 		int read = 0, ic;
 		while (read < size) {
@@ -144,6 +150,9 @@ public class NbtReader implements AutoCloseable {
 
 	public long[] readLongArray() throws IOException {
 		final int size = readInt();
+		if (size > 0x00FFFFFF) {
+			throw new OutOfMemoryError();
+		}
 		final long[] longs = new long[size];
 		int read = 0, ic;
 		while (read < size) {
