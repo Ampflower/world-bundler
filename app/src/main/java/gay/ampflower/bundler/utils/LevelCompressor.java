@@ -7,6 +7,9 @@ import gay.ampflower.bundler.world.region.McRegionHandler;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
+import net.jpountz.lz4.LZ4BlockInputStream;
+import net.jpountz.lz4.LZ4BlockOutputStream;
+import net.jpountz.lz4.LZ4Factory;
 import org.slf4j.Logger;
 
 import java.io.*;
@@ -172,6 +175,35 @@ public enum LevelCompressor {
 			final long pass2 = Zstd.decompressByteArray(ret, 0, (int) size, array, off, len);
 			if (pass2 != size) logger.warn("{} != {} for Zstd.inflate({}, {}, {})", size, pass2, array, off, len);
 			return ret;
+		}
+	},
+	LZ4(McRegionHandler.COMPRESSION_LZ4) {
+		private final LZ4Factory factory = LZ4Factory.fastestInstance();
+
+		@Override
+		public OutputStream deflater(final OutputStream stream) throws IOException {
+			return new LZ4BlockOutputStream(stream, (int) SizeUtils.MiB * 32, factory.highCompressor());
+		}
+
+		@Override
+		public InputStream inflater(final InputStream stream) throws IOException {
+			return new LZ4BlockInputStream(stream, factory.fastDecompressor());
+		}
+
+		@Override
+		public boolean compatible(final PushbackInputStream stream) throws IOException {
+			final byte[] bytes = stream.readNBytes(8);
+			stream.unread(bytes);
+			return compatible(bytes);
+		}
+
+		@Override
+		public boolean compatible(final byte[] array) {
+			if (array.length < 8) {
+				return false;
+			}
+			final long value = (long) ArrayUtils.LONGS_BIG_ENDIAN.get(array, 0);
+			return value == 0x4c5a_3442_6c6f_636bL;
 		}
 	},
 	;

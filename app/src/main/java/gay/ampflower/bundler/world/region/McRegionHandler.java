@@ -49,6 +49,7 @@ public class McRegionHandler implements RegionHandler {
 	public static final byte COMPRESSION_GZIP = 0x01;
 	public static final byte COMPRESSION_ZLIB = 0x02;
 	public static final byte COMPRESSION_NONE = 0x03;
+	public static final byte COMPRESSION_LZ4 = 0x04;
 
 	static final int COMPRESSION_MASK_MIN = 0x7F;
 	static final int COMPRESSION_MASK_ALL = 0xFF;
@@ -118,7 +119,10 @@ public class McRegionHandler implements RegionHandler {
 			logger.trace("{} @ {} with compressor {} ({}, {})", size, offset, Integer.toHexString(compressorId), compressorId, compressor);
 
 			if (compressor == null) {
-				logger.warn("Corrupted chunk [{},{}][{}]; Invalid compressor: {}", x, y, i, compressorId & COMPRESSION_MASK_MIN);
+				logger.warn("Corrupted chunk [{},{}][{}]; Invalid compressor: {}, magic: {} ({})",
+					x, y, i, compressorId & COMPRESSION_MASK_MIN,
+					ArrayUtils.hexString(bytes, offset, size, 32),
+					ArrayUtils.urlEncoded(bytes, offset, size, 32));
 				continue;
 			}
 

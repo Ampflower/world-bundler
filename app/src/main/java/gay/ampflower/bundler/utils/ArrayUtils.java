@@ -2,7 +2,9 @@ package gay.ampflower.bundler.utils;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.net.URLEncoder;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HexFormat;
@@ -173,5 +175,20 @@ public final class ArrayUtils {
 			return Arrays.toString(objects);
 		}
 		return "invalid: " + array;
+	}
+
+	public static String hexString(byte[] bytes, int offset, int len, int max) {
+		return HexFormat.of().formatHex(bytes, offset, offset + Math.max(len, max));
+	}
+
+	public static String urlEncoded(byte[] bytes, int offset, int len, int max) {
+		if (len > max) {
+			return URLEncoder.encode(getStringSafe(bytes, offset, max), StandardCharsets.UTF_8) + '\u2026';
+		}
+		return URLEncoder.encode(getStringSafe(bytes, offset, len), StandardCharsets.UTF_8);
+	}
+
+	public static String getStringSafe(byte[] bytes, int offset, int len) {
+		return new String(bytes, offset, Math.min(len, bytes.length - offset), StandardCharsets.UTF_8);
 	}
 }

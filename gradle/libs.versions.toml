@@ -1,7 +1,8 @@
 [versions]
 # Apache Commons
 commons_compress="1.23.0"
-zstd="1.5.5-3"
+zstd = "1.5.5-3"
+lz4 = "1.8.0"
 
 # Utilites
 fastutil="8.5.12"
@@ -15,6 +16,7 @@ logback="1.4.6"
 # Apache Commons
 commons_compress = { module = "org.apache.commons:commons-compress", version.ref = "commons_compress" }
 zstd = { module = "com.github.luben:zstd-jni", version.ref = "zstd" }
+lz4 = { module = "org.lz4:lz4-java", version.ref = "lz4" }
 
 # Utilties
 fastutil = { module = "it.unimi.dsi:fastutil", version.ref = "fastutil" }
@@ -25,6 +27,6 @@ logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 slf4j = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 
 [bundles]
-commons = ["commons_compress", "zstd"]
+commons = ["commons_compress", "zstd", "lz4"]
 utils = ["fastutil", "jopt"]
 logger = ["logback", "slf4j"]

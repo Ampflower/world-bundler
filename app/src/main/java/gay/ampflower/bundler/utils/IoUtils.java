@@ -12,8 +12,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 /**
@@ -115,7 +113,7 @@ public final class IoUtils {
 		final int length = ((short) ArrayUtils.SHORTS_BIG_ENDIAN.get(nbt, 1)) & 0xFFFF;
 		if (length != 0) {
 			logger.warn("Possible corruption: Non-zero name length at chunk {}: Got {}: {}",
-				chunk, length, getStringTrunc(nbt, 3, length, 64));
+				chunk, length, ArrayUtils.urlEncoded(nbt, 3, length, 64));
 		}
 
 		final var stw = new SaxTreeWriter();
@@ -134,16 +132,5 @@ public final class IoUtils {
 		logger.trace("Got {} -> {}", stw.getRootName(), stw.getRoot());
 
 		return (NbtCompound) stw.getRoot();
-	}
-
-	public static String getStringTrunc(byte[] bytes, int offset, int len, int max) {
-		if (len > max) {
-			return URLEncoder.encode(getStringSafe(bytes, offset, max), StandardCharsets.UTF_8) + '\u2026';
-		}
-		return URLEncoder.encode(getStringSafe(bytes, offset, len), StandardCharsets.UTF_8);
-	}
-
-	public static String getStringSafe(byte[] bytes, int offset, int len) {
-		return new String(bytes, offset, Math.min(len, bytes.length - offset), StandardCharsets.UTF_8);
 	}
 }
