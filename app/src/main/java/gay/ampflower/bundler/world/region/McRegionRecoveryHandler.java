@@ -240,9 +240,13 @@ public final class McRegionRecoveryHandler extends McRegionHandler implements Re
 
 			final var nbt = IoUtils.verifyNbt(data, offset);
 
-			logger.info("Successfully read seemingly valid data @ {}", offset);
-			logger.trace("Associated data: {}", nbt);
-			return new PotentialChunk(data, nbt);
+			if (nbt.isEmpty()) {
+				logger.warn("Data @ {} seems missing", offset);
+			} else {
+				logger.trace("Successfully read seemingly valid data @ {}", offset);
+				logger.trace("Associated data: {}", nbt);
+				return new PotentialChunk(data, nbt);
+			}
 		} catch (IOException | IndexOutOfBoundsException | NegativeArraySizeException | AssertionError error) {
 			logger.trace("Failed to read data @ {} with compressor {}", offset, compressor, error);
 		}

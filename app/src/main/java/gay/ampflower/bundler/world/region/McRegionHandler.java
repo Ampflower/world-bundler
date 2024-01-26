@@ -350,7 +350,7 @@ public class McRegionHandler implements RegionHandler {
 			final int sectors = upper & BYTE_MASK;
 
 			if (sectors == 0 || offset == 0) {
-				logger.warn("Corrupted entry (offset: {}, sectors: {}) {}", offset, sectors, pos);
+				logger.trace("Corrupted entry (offset: {}, sectors: {}) {}", offset, sectors, pos);
 				return SENTINEL;
 			}
 

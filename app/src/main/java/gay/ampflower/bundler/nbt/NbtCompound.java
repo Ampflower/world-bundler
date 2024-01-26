@@ -143,6 +143,10 @@ public final class NbtCompound implements Nbt<Map<String, Nbt<?>>> {
 		return backing.put(key, value);
 	}
 
+	public boolean isEmpty() {
+		return backing.isEmpty();
+	}
+
 	@Override
 	public void push(final String key, final Nbt<?> value) {
 		put(key, value);
