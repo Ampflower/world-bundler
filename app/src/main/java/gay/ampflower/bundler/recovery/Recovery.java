@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
@@ -90,14 +91,14 @@ public final class Recovery {
 							logger.warn("Unable to read {}, {} with Recovery:", x, y, ioe);
 						}
 
-						logger.debug("primary == {}, secondary == {}", primary != null && !primary.isEmpty(), secondary != null && !secondary.isEmpty());
+						logger.debug("primary == {}, secondary == {}", isEmpty(primary), isEmpty(secondary));
 						logger.trace("primary == {}, secondary == {}", primary, secondary);
-						if (primary == null || primary.isEmpty()) {
-							if (secondary != null && !secondary.isEmpty()) {
+						if (isEmpty(primary)) {
+							if (!isEmpty(secondary)) {
 								logger.debug("adding secondary");
 								regions.add(secondary);
 							}
-						} else if (secondary == null || secondary.isEmpty()) {
+						} else if (isEmpty(secondary)) {
 							logger.debug("adding primary");
 							regions.add(primary);
 						} else {
@@ -134,5 +135,19 @@ public final class Recovery {
 		while ((region = regions.poll()) != null) {
 			output.recover(region);
 		}
+	}
+
+	private static boolean isEmpty(Region region) {
+		if (region == null) {
+			return true;
+		}
+		if (!region.isEmpty()) {
+			return false;
+		}
+		final var meta = region.meta();
+		if (meta instanceof Collection<?> collection) {
+			return !collection.isEmpty();
+		}
+		return meta == null;
 	}
 }
