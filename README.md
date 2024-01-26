@@ -31,8 +31,6 @@ TODO: This part of the project is not finished.
 	- It is important that you do this as soon as possible.
 	  The longer you wait, the more likely your worlds will be irrecoverably overwritten by competing processes.
 2. Prepare the source folder.
-	- Bundler can only read Anvil from a region folder for the time being when in recovery mode.
-	- As such, make sure the folder is solely of Anvil regions, or McRegion renamed to end in `.mca`.
 3. Prepare a target folder.
 	- You can use an older backup if there is one available.
 	  Bundler can directly write into an existing world and stack newer chunks over the older region.
