@@ -111,11 +111,11 @@ public class RegionedChunkStorage implements ChunkStorage {
 		return true;
 	}
 
-	private class McRegionChunkReader implements ChunkReader, ChunkWriter {
+	public class McRegionChunkReader implements ChunkReader, ChunkWriter {
 		private final int regionX;
 		private final int regionY;
 
-		private McRegionChunkReader(final int regionX, final int regionY) {
+		public McRegionChunkReader(final int regionX, final int regionY) {
 			this.regionX = regionX;
 			this.regionY = regionY;
 		}

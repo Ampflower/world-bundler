@@ -10,7 +10,10 @@ public record Pos2i(int x, int y) {
 	}
 
 	public long toLong() {
-		return (long) x << 32 | y;
+		final long ret = (long) x << 32 | (long) y & 0xFFFFFFFFL;
+		assert x(ret) == x;
+		assert y(ret) == y;
+		return ret;
 	}
 
 	public static int x(long pos) {

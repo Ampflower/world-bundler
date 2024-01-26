@@ -1,9 +1,11 @@
 package gay.ampflower.bundler.world.io.dir;
 
+import gay.ampflower.bundler.utils.LogUtils;
 import gay.ampflower.bundler.utils.SizeUtils;
 import gay.ampflower.bundler.world.io.resolvers.FileResolvers;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
+import org.slf4j.Logger;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,6 +15,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 public final class DirectoryData {
+	private static final Logger logger = LogUtils.logger();
+
 	public final Path dir;
 	public final Set<DirectoryData> dirs = new HashSet<>();
 	public final Set<Path> paths = new HashSet<>();
@@ -38,6 +42,7 @@ public final class DirectoryData {
 		var pos = FileResolvers.Anvil.getChunkCoordinate(path);
 
 		if (pos != null) {
+			logger.trace("{} -> {} ({})", path, pos, pos.toLong());
 			this.mcc.add(pos.toLong());
 			return;
 		}
