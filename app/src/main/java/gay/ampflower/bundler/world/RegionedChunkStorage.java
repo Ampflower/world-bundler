@@ -1,6 +1,6 @@
 package gay.ampflower.bundler.world;
 
-import gay.ampflower.bundler.utils.LevelCompressor;
+import gay.ampflower.bundler.compress.Compressor;
 import gay.ampflower.bundler.utils.LongTransiterator;
 import gay.ampflower.bundler.utils.function.FileResolver;
 import gay.ampflower.bundler.utils.pos.Pos2i;
@@ -121,7 +121,7 @@ public class RegionedChunkStorage implements ChunkStorage {
 		}
 
 		@Override
-		public byte[] readChunk(final int i, final LevelCompressor compressor) throws IOException {
+		public byte[] readChunk(final int i, final Compressor compressor) throws IOException {
 			final int x = Region.getChunkX(regionX, i);
 			final int y = Region.getChunkY(regionY, i);
 

@@ -1,9 +1,9 @@
 package gay.ampflower.bundler.world.region;
 
+import gay.ampflower.bundler.compress.Compressor;
 import gay.ampflower.bundler.nbt.NbtCompound;
 import gay.ampflower.bundler.utils.ArrayUtils;
 import gay.ampflower.bundler.utils.IoUtils;
-import gay.ampflower.bundler.utils.LevelCompressor;
 import gay.ampflower.bundler.utils.LogUtils;
 import gay.ampflower.bundler.world.Chunk;
 import gay.ampflower.bundler.world.PotentialChunk;
@@ -114,7 +114,7 @@ public class McRegionHandler implements RegionHandler {
 			int size = (int) INT_HANDLE.get(bytes, offset) - 1;
 
 			int compressorId = bytes[offset + 4];
-			var compressor = LevelCompressor.getMcRegionCompressor(compressorId & COMPRESSION_MASK_MIN);
+			var compressor = Compressor.getMcRegionCompressor(compressorId & COMPRESSION_MASK_MIN);
 
 			logger.trace("{} @ {} with compressor {} ({}, {})", size, offset, Integer.toHexString(compressorId), compressorId, compressor);
 
@@ -178,7 +178,7 @@ public class McRegionHandler implements RegionHandler {
 	}
 
 	protected PotentialChunk readChunk(final int x, final int y, final int i, final int size, final int compressorId,
-												  final ChunkReader chunkReader, final LevelCompressor compressor, final byte[] bytes,
+												  final ChunkReader chunkReader, final Compressor compressor, final byte[] bytes,
 												  final int offset) throws IOException {
 		final byte[] chunk;
 		NbtCompound nbt = null;

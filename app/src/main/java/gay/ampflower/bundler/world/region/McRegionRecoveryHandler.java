@@ -1,8 +1,12 @@
 package gay.ampflower.bundler.world.region;
 
+import gay.ampflower.bundler.compress.Compressor;
 import gay.ampflower.bundler.nbt.Nbt;
 import gay.ampflower.bundler.nbt.NbtCompound;
-import gay.ampflower.bundler.utils.*;
+import gay.ampflower.bundler.utils.ArrayUtils;
+import gay.ampflower.bundler.utils.IoUtils;
+import gay.ampflower.bundler.utils.LogUtils;
+import gay.ampflower.bundler.utils.SizeUtils;
 import gay.ampflower.bundler.world.Chunk;
 import gay.ampflower.bundler.world.PotentialChunk;
 import gay.ampflower.bundler.world.Region;
@@ -86,21 +90,21 @@ public final class McRegionRecoveryHandler extends McRegionHandler implements Re
 		for (int i = 0; i < buffer.length; i += SECTOR_SNIFF) {
 			final int expectedSize = (int) INT_HANDLE.get(buffer, i);
 			final int compressorByte = buffer[i + 4] & COMPRESSION_MASK_MIN;
-			PotentialChunk chunk = tryInflate(buffer, i + 5, expectedSize, LevelCompressor.getMcRegionCompressor(compressorByte));
+			PotentialChunk chunk = tryInflate(buffer, i + 5, expectedSize, Compressor.getMcRegionCompressor(compressorByte));
 
 			if (add(region, chunks, chunk)) {
 				continue;
 			}
 
 			System.arraycopy(buffer, i, buf, 0, 8);
-			chunk = tryInflate(buffer, i, -1, LevelCompressor.getFileCompressor(buf));
+			chunk = tryInflate(buffer, i, -1, Compressor.getFileCompressor(buf));
 
 			if (add(region, chunks, chunk)) {
 				continue;
 			}
 
 			System.arraycopy(buffer, i + 5, buf, 0, 8);
-			chunk = tryInflate(buffer, i + 5, -1, LevelCompressor.getFileCompressor(buf));
+			chunk = tryInflate(buffer, i + 5, -1, Compressor.getFileCompressor(buf));
 
 			if (add(region, chunks, chunk)) {
 				continue;
@@ -177,7 +181,7 @@ public final class McRegionRecoveryHandler extends McRegionHandler implements Re
 
 	@Override
 	protected PotentialChunk readChunk(final int x, final int y, final int i, final int size, final int compressorId,
-												  final ChunkReader chunkReader, final LevelCompressor compressor, final byte[] bytes,
+												  final ChunkReader chunkReader, final Compressor compressor, final byte[] bytes,
 												  final int offset) throws IOException {
 		if (compressorId < 0) {
 			final byte[] chunk = chunkReader.readChunk(i, compressor);
@@ -219,7 +223,7 @@ public final class McRegionRecoveryHandler extends McRegionHandler implements Re
 
 	@Nullable
 	private static PotentialChunk tryInflate(final @Nonnull byte[] buffer, final int offset, final int expectedSize,
-														  final @Nullable LevelCompressor compressor) {
+														  final @Nullable Compressor compressor) {
 		if (compressor == null) {
 			return null;
 		}

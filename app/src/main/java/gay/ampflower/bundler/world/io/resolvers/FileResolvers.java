@@ -1,7 +1,7 @@
 package gay.ampflower.bundler.world.io.resolvers;
 
+import gay.ampflower.bundler.compress.GZipCompressor;
 import gay.ampflower.bundler.utils.Constants;
-import gay.ampflower.bundler.utils.LevelCompressor;
 import gay.ampflower.bundler.utils.function.FileResolver;
 import gay.ampflower.bundler.utils.pos.Pos2i;
 import gay.ampflower.bundler.world.AlphaChunkStorage;
@@ -31,7 +31,7 @@ public enum FileResolvers {
 		Pattern.compile("/" + Constants.base36 + "{1,2}/" + Constants.base36 + "{1,2}/c\\.(?<x>" + Constants.base36 + "+)\\.(?<y>" + Constants.base36 + "+)\\.dat$", Pattern.CASE_INSENSITIVE), null, 36) {
 		@Override
 		public ChunkStorage createChunkStorage(final Path root) {
-			return new AlphaChunkStorage(LevelCompressor.GZIP, root);
+			return new AlphaChunkStorage(GZipCompressor.INSTANCE, root);
 		}
 	},
 	;

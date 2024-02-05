@@ -1,6 +1,6 @@
 package gay.ampflower.bundler.world;
 
-import gay.ampflower.bundler.utils.LevelCompressor;
+import gay.ampflower.bundler.compress.Compressor;
 import gay.ampflower.bundler.utils.function.IntBiFunction;
 import gay.ampflower.bundler.utils.pos.Pos2i;
 import gay.ampflower.bundler.world.io.ChunkStorage;
@@ -23,12 +23,12 @@ public class AlphaChunkStorage implements ChunkStorage {
 
 	private static final OpenOption[] writeOptions = {StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING};
 
-	private final LevelCompressor levelCompressor;
+	private final Compressor compressor;
 	private final Path workingDirectory;
 	private final IntBiFunction<String> chunkResolver;
 
-	public AlphaChunkStorage(final LevelCompressor levelCompressor, final Path workingDirectory) {
-		this.levelCompressor = levelCompressor;
+	public AlphaChunkStorage(final Compressor compressor, final Path workingDirectory) {
+		this.compressor = compressor;
 		this.workingDirectory = workingDirectory;
 		this.chunkResolver = (x, y) -> base36(x & ALPHA_BIT_MASK) + '/' + base36(y & ALPHA_BIT_MASK) + "/c." + base36(x) + "." + base36(y) + ".dat";
 	}
@@ -43,7 +43,7 @@ public class AlphaChunkStorage implements ChunkStorage {
 		final var path = workingDirectory.resolve(chunkResolver.apply(x, y));
 
 		if (Files.exists(path)) {
-			return new Chunk(x, y, 0, LevelCompressor.tryDecompress(Files.readAllBytes(path)));
+			return new Chunk(x, y, 0, Compressor.tryDecompress(Files.readAllBytes(path)));
 		}
 		return null;
 	}
@@ -58,7 +58,7 @@ public class AlphaChunkStorage implements ChunkStorage {
 			Files.createDirectories(parent);
 		}
 
-		Files.write(path, levelCompressor.deflate(chunk.array()), writeOptions);
+		Files.write(path, compressor.deflate(chunk.array()), writeOptions);
 	}
 
 	@Override

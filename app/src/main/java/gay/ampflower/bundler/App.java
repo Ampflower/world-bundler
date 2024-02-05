@@ -1,12 +1,15 @@
 package gay.ampflower.bundler;
 
-import gay.ampflower.bundler.utils.LevelCompressor;
+import gay.ampflower.bundler.compress.Compressor;
+import gay.ampflower.bundler.compress.CompressorRegistry;
+import gay.ampflower.bundler.utils.Identifier;
 import gay.ampflower.bundler.utils.LevelConverter;
 import gay.ampflower.bundler.utils.LogUtils;
 import gay.ampflower.bundler.world.Region;
 import gay.ampflower.bundler.world.region.LinearHandler;
 import gay.ampflower.bundler.world.region.McRegionHandler;
 import joptsimple.OptionParser;
+import joptsimple.ValueConverter;
 import joptsimple.util.EnumConverter;
 import joptsimple.util.PathConverter;
 import org.slf4j.Logger;
@@ -62,7 +65,22 @@ public final class App {
 		parser.acceptsAll(List.of("x", "convert"), "Converts the input into a new format.")
 			.withRequiredArg().withValuesConvertedBy(new EnumConverter<>(LevelConverter.class) {});
 		var compressorArgument = parser.accepts("compressor", "The compressor used for compressing.")
-				.withRequiredArg().withValuesConvertedBy(new EnumConverter<>(LevelCompressor.class) {});
+			.withRequiredArg().withValuesConvertedBy(new ValueConverter<Compressor>() {
+				@Override
+				public Compressor convert(final String value) {
+					return CompressorRegistry.vanilla.get(Identifier.ofBundler(value));
+				}
+
+				@Override
+				public Class<? extends Compressor> valueType() {
+					return Compressor.class;
+				}
+
+				@Override
+				public String valuePattern() {
+					return null;
+				}
+			});
 
 		// Misc
 		var filterArgument = parser.acceptsAll(List.of("f", "filter"), "Filter the files to pack, unpack or convert.")

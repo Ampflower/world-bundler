@@ -1,8 +1,8 @@
 package gay.ampflower.bundler.world.region;
 
 import com.github.luben.zstd.Zstd;
+import gay.ampflower.bundler.compress.ZstdCompressor;
 import gay.ampflower.bundler.utils.ArrayUtils;
-import gay.ampflower.bundler.utils.LevelCompressor;
 import gay.ampflower.bundler.utils.LimitedInputStream;
 import gay.ampflower.bundler.utils.LogUtils;
 import gay.ampflower.bundler.world.Chunk;
@@ -188,7 +188,7 @@ public class LinearHandler implements RegionHandler {
 			offset += chunk.array().length;
 		}
 
-		return new Chunks(count, LevelCompressor.ZSTD.deflate(bytes));
+		return new Chunks(count, ZstdCompressor.INSTANCE.deflate(bytes));
 	}
 
 	private record Header(

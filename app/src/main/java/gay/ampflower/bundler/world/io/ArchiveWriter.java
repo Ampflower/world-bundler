@@ -1,6 +1,8 @@
 package gay.ampflower.bundler.world.io;
 
-import gay.ampflower.bundler.utils.LevelCompressor;
+import gay.ampflower.bundler.compress.Compressor;
+import gay.ampflower.bundler.compress.CompressorRegistry;
+import gay.ampflower.bundler.compress.NoneCompressor;
 import gay.ampflower.bundler.utils.LogUtils;
 import gay.ampflower.bundler.utils.SizeUtils;
 import gay.ampflower.bundler.utils.io.CountingOutputStream;
@@ -65,7 +67,7 @@ public class ArchiveWriter implements WorldWriter {
 
 					try (final var fin = Files.newInputStream(file);
 						  final var pin = new PushbackInputStream(fin, 8)) {
-						final var compressor = LevelCompressor.getFileCompressor(pin);
+						final var compressor = Compressor.getFileCompressor(pin);
 						final byte[] bytes;
 
 						try (final var inf = compressor.inflater(pin)) {
@@ -77,8 +79,8 @@ public class ArchiveWriter implements WorldWriter {
 						cksum.reset();
 
 						entry.setSize(bytes.length);
-						if (compressor != LevelCompressor.NONE) {
-							entry.setComment(compressor.name());
+						if (compressor != NoneCompressor.INSTANCE) {
+							entry.setComment(CompressorRegistry.vanilla.getId(compressor).toString());
 						}
 
 						zos.putNextEntry(entry);
