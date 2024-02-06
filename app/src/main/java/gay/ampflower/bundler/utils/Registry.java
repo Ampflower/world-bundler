@@ -69,4 +69,12 @@ public class Registry<V> {
 	public Identifier getId(V value) {
 		return valueToId.get(value);
 	}
+
+	public Set<Identifier> keys() {
+		return idToValue.keySet();
+	}
+
+	public Set<V> values() {
+		return valueToId.keySet();
+	}
 }

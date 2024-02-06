@@ -190,7 +190,7 @@ public final class ArrayUtils {
 	}
 
 	public static String hexString(byte[] bytes, int offset, int len, int max) {
-		return HexFormat.of().formatHex(bytes, offset, offset + Math.max(len, max));
+		return HexFormat.of().formatHex(bytes, offset, Math.min(bytes.length, offset + Math.min(len, max)));
 	}
 
 	public static String urlEncoded(byte[] bytes, int offset, int len, int max) {
