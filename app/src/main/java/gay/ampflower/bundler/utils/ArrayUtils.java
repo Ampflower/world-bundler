@@ -22,6 +22,8 @@ public final class ArrayUtils {
 	public static final VarHandle FLOATS_BIG_ENDIAN = MethodHandles.byteArrayViewVarHandle(float[].class, ByteOrder.BIG_ENDIAN);
 	public static final VarHandle DOUBLES_BIG_ENDIAN = MethodHandles.byteArrayViewVarHandle(double[].class, ByteOrder.BIG_ENDIAN);
 
+	public static final VarHandle INTS_LITTLE_ENDIAN = MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.LITTLE_ENDIAN);
+
 	public static final int BYTE_STRIDE = 1;
 	public static final int SHORT_STRIDE = 2;
 	public static final int INT_STRIDE = 4;

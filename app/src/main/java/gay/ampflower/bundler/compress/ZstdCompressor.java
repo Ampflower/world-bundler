@@ -21,6 +21,8 @@ public final class ZstdCompressor implements Compressor {
 	public static final ZstdCompressor INSTANCE = new ZstdCompressor();
 	private static final Logger logger = LogUtils.logger();
 
+	static final int magic = Zstd.magicNumber();
+
 	@Override
 	public OutputStream deflater(final OutputStream stream) throws IOException {
 		return new ZstdOutputStream(stream);
@@ -45,9 +47,9 @@ public final class ZstdCompressor implements Compressor {
 			return false;
 		}
 
-		final int value = (int) ArrayUtils.INTS_BIG_ENDIAN.get(array, 0);
+		final int value = (int) ArrayUtils.INTS_LITTLE_ENDIAN.get(array, 0);
 
-		return value == 0xFD2FB528;
+		return value == magic;
 	}
 
 	@Override
@@ -61,10 +63,16 @@ public final class ZstdCompressor implements Compressor {
 	}
 
 	@Override
-	public byte[] inflate(final byte[] array, final int off, final int len) {
+	public byte[] inflate(final byte[] array, final int off, final int len) throws IOException {
 		final long size = Zstd.decompressedSize(array, off, len);
-		if (size > Integer.MAX_VALUE || size < 0)
-			throw new OutOfMemoryError("cannot allocate " + Long.toUnsignedString(size) + " byte array");
+		if (size == -1L) {
+			// Seems that the stream deflater doesn't store sizing and emits -1.
+			logger.trace("Got -1 for {}[{}:{}] ({}); streamed?", array, off, off + len, System.identityHashCode(array));
+			return Compressor.super.inflate(array, off, len);
+		}
+		if (size > Integer.MAX_VALUE || size < 0) {
+			throw new OutOfMemoryError("cannot allocate " + Long.toUnsignedString(size) + " byte array (" + Long.toHexString(size) + ')');
+		}
 		final var ret = new byte[(int) size];
 		final long pass2 = Zstd.decompressByteArray(ret, 0, (int) size, array, off, len);
 		if (pass2 != size) logger.warn("{} != {} for Zstd.inflate({}, {}, {})", size, pass2, array, off, len);
