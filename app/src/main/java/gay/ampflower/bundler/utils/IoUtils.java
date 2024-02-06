@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.function.Consumer;
 
 /**
  * @author Ampflower
@@ -58,6 +59,21 @@ public final class IoUtils {
 	public static int readIntBigEndian(InputStream stream, byte[] buf, int off) throws IOException {
 		readExact(stream, buf, off, 4);
 		return (int) ArrayUtils.INTS_BIG_ENDIAN.get(buf, off);
+	}
+
+	public static Thread asyncPipe(InputStream inputStream, OutputStream outputStream, Consumer<IOException> handler, Runnable closed) {
+		return Thread.startVirtualThread(pipe(inputStream, outputStream, handler, closed));
+	}
+
+	public static Runnable pipe(InputStream inputStream, OutputStream outputStream, Consumer<IOException> handler, Runnable closed) {
+		return () -> {
+			try (inputStream; outputStream) {
+				inputStream.transferTo(outputStream);
+			} catch (IOException ioe) {
+				handler.accept(ioe);
+			}
+			closed.run();
+		};
 	}
 
 	public static void writeSectors(OutputStream stream, @Nonnull byte[] read, int roff, @Nonnull byte[] buf, int woff, int len) throws IOException {

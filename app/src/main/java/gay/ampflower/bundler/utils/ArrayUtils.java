@@ -39,6 +39,16 @@ public final class ArrayUtils {
 		return array;
 	}
 
+	public static boolean startsWith(final byte[] ref, final byte[] prefix) {
+		if (ref.length < prefix.length) {
+			return false;
+		}
+		if (ref == prefix) {
+			return true;
+		}
+		return Arrays.equals(ref, 0, prefix.length, prefix, 0, prefix.length);
+	}
+
 	public static void copyBigEndianShorts(byte[] read, int roff, short[] write, int woff, int len) {
 		for (int i = 0; i < len; i++) {
 			write[woff + i] = (short) SHORTS_BIG_ENDIAN.get(read, roff + i * SHORT_STRIDE);
