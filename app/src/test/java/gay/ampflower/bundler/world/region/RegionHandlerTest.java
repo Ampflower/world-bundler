@@ -13,11 +13,10 @@ import org.testng.annotations.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.Iterator;
 
-import static gay.ampflower.bundler.TestUtils.array;
+import static gay.ampflower.bundler.TestUtils.zipArrays;
 
 /**
  * @author Ampflower
@@ -112,16 +111,11 @@ public class RegionHandlerTest {
 
 	@DataProvider
 	public static Iterator<Object[]> handlersAndEmptyRegions() {
-		return handlerAndRegionsFactory(handlers, emptyRegions());
+		return zipArrays(handlers, emptyRegions());
 	}
 
 	@DataProvider
 	public static Iterator<Object[]> handlersAndRegions() {
-		return handlerAndRegionsFactory(handlers, regions());
-	}
-
-	public static Iterator<Object[]> handlerAndRegionsFactory(final RegionHandler[] handlers, final Region[] regions) {
-		return Arrays.stream(handlers).flatMap(handler ->
-			Arrays.stream(regions).map(region -> array(handler, region))).iterator();
+		return zipArrays(handlers, regions());
 	}
 }
