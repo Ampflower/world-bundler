@@ -2,7 +2,7 @@ package gay.ampflower.bundler.world.util;
 
 import gay.ampflower.bundler.nbt.Nbt;
 import gay.ampflower.bundler.nbt.NbtCompound;
-import gay.ampflower.bundler.utils.IoUtils;
+import gay.ampflower.bundler.utils.io.IoUtils;
 import gay.ampflower.bundler.utils.pos.Pos2i;
 import gay.ampflower.bundler.world.Chunk;
 

@@ -1,8 +1,8 @@
 package gay.ampflower.bundler.compress;
 
 import gay.ampflower.bundler.utils.ArrayUtils;
-import gay.ampflower.bundler.utils.IoUtils;
 import gay.ampflower.bundler.utils.LogUtils;
+import gay.ampflower.bundler.utils.io.IoUtils;
 import gay.ampflower.bundler.utils.io.ProcessOutputStream;
 import org.slf4j.Logger;
 

@@ -1,8 +1,8 @@
 package gay.ampflower.bundler.world.region;
 
 import gay.ampflower.bundler.utils.ArrayUtils;
-import gay.ampflower.bundler.utils.IoUtils;
 import gay.ampflower.bundler.utils.LogUtils;
+import gay.ampflower.bundler.utils.io.IoUtils;
 import gay.ampflower.bundler.world.Chunk;
 import gay.ampflower.bundler.world.Region;
 import gay.ampflower.bundler.world.io.RegionHandler;

@@ -1,6 +1,5 @@
 package gay.ampflower.bundler.utils.io;
 
-import gay.ampflower.bundler.utils.IoUtils;
 import gay.ampflower.bundler.utils.LogUtils;
 import org.slf4j.Logger;
 

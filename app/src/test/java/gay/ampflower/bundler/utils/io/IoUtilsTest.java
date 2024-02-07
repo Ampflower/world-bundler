@@ -1,5 +1,6 @@
-package gay.ampflower.bundler.utils;
+package gay.ampflower.bundler.utils.io;
 
+import gay.ampflower.bundler.utils.LogUtils;
 import org.slf4j.Logger;
 import org.testng.Assert;
 import org.testng.annotations.Test;

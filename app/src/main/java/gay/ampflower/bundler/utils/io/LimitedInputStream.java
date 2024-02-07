@@ -1,4 +1,4 @@
-package gay.ampflower.bundler.utils;
+package gay.ampflower.bundler.utils.io;
 
 import javax.annotation.Nonnull;
 import java.io.EOFException;
