@@ -51,6 +51,22 @@ public class McRegionHandler implements RegionHandler {
 	public static final byte COMPRESSION_NONE = 0x03;
 	public static final byte COMPRESSION_LZ4 = 0x04;
 
+	/**
+	 * Custom compression scheme
+	 * <p>
+	 * On disk, this means each heading sector is,
+	 * in Big Endian JVM bytecode form:
+	 * {@code IBS[B[B}
+	 * <ul>
+	 *    <li>An integer stating the size of the chunk</li>
+	 *    <li>A compression byte identifier of 127 or 255.</li>
+	 * 	<li>An unsigned 16-bit integer describing the size of the following string</li>
+	 * 	<li>The identifier of the compressor</li>
+	 * 	<li>The compressed data to be decoded by the identified compressor</li>
+	 * </ul>
+	 */
+	public static final byte COMPRESSION_CUSTOM = 0x7F;
+
 	static final int COMPRESSION_MASK_MIN = 0x7F;
 	static final int COMPRESSION_MASK_ALL = 0xFF;
 	static final byte COMPRESSION_FLAG_EXTERN = -0x80;

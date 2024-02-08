@@ -89,6 +89,25 @@ public final class ArrayUtils {
 		}
 	}
 
+	public static byte[] concat(final byte[]... bytess) {
+		final byte[] output;
+		{
+			int size = 0;
+			for (final byte[] bytes : bytess) {
+				size += bytes.length;
+			}
+			output = new byte[size];
+		}
+
+		int offset = 0;
+		for (final byte[] bytes : bytess) {
+			System.arraycopy(bytes, 0, output, offset, bytes.length);
+			offset += bytes.length;
+		}
+
+		return output;
+	}
+
 	public static int sum(final int[] ints) {
 		int value = 0;
 

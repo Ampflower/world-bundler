@@ -2,6 +2,7 @@ package gay.ampflower.bundler.compress;
 
 import gay.ampflower.bundler.utils.ArrayUtils;
 import gay.ampflower.bundler.utils.LogUtils;
+import gay.ampflower.bundler.utils.io.DataUtils;
 import org.slf4j.Logger;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -14,8 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import static gay.ampflower.bundler.TestUtils.zipArrays;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.*;
 
 /**
  * @author Ampflower
@@ -68,6 +68,26 @@ public class CompressionTest {
 		final var deflatedA = compressor.deflate(test);
 		final var deflatedB = deflateWithStream(compressor, test);
 
+		inflate(compressor, test, deflatedA, deflatedB);
+	}
+
+	@Test(dataProvider = "compressorsAndPatterns")
+	public void customCompressorTest(Compressor compressor, byte[] test) throws IOException {
+		final var identifier = CompressorRegistry.vanilla.customCompressors.getId(compressor);
+		assertNotNull(identifier, compressor + " has no canonical ID");
+
+		final var identifierRaw = DataUtils.writeString(identifier.toString());
+
+		final var deflatedA = compressor.deflate(test);
+		final var deflatedB = deflateWithStream(compressor, test);
+
+		inflate(CustomCompressor.INSTANCE, test,
+			ArrayUtils.concat(identifierRaw, deflatedA),
+			ArrayUtils.concat(identifierRaw, deflatedB)
+		);
+	}
+
+	private static void inflate(Compressor compressor, byte[] test, byte[] deflatedA, byte[] deflatedB) throws IOException {
 		if (!Arrays.equals(deflatedA, deflatedB)) {
 			logger.warn("Compressor {} emitted two values: {}, {} ({}, {})", compressor,
 				System.identityHashCode(deflatedA), System.identityHashCode(deflatedB), deflatedA, deflatedB);

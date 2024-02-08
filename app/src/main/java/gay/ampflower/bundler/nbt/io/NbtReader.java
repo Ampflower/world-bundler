@@ -2,11 +2,11 @@ package gay.ampflower.bundler.nbt.io;
 
 import gay.ampflower.bundler.nbt.NbtType;
 import gay.ampflower.bundler.utils.ArrayUtils;
+import gay.ampflower.bundler.utils.io.DataUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.invoke.VarHandle;
-import java.nio.charset.StandardCharsets;
 
 import static gay.ampflower.bundler.utils.ArrayUtils.*;
 
@@ -107,7 +107,7 @@ public class NbtReader implements AutoCloseable {
 
 	public String readString() throws IOException {
 		final byte[] bytes = readBytes(readShort() & 0xFFFF);
-		return new String(bytes, 0, bytes.length, StandardCharsets.UTF_8);
+		return new String(bytes, 0, bytes.length, DataUtils.CHARSET);
 	}
 
 	public short[] readShortArray() throws IOException {
