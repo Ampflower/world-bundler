@@ -2,7 +2,7 @@ package gay.ampflower.bundler.compress;
 
 import gay.ampflower.bundler.utils.ArrayUtils;
 import gay.ampflower.bundler.utils.LogUtils;
-import gay.ampflower.bundler.utils.io.IoUtils;
+import gay.ampflower.bundler.utils.io.ProcessInputStream;
 import gay.ampflower.bundler.utils.io.ProcessOutputStream;
 import org.slf4j.Logger;
 
@@ -66,9 +66,7 @@ public record ExecutableCompressor(List<String> deflater, List<String> inflater,
 		process.onExit()
 			.thenAccept(proc -> logger.debug("Inflater {} @ {} exited with {}", deflater.get(0), proc.pid(), proc.exitValue()));
 
-		IoUtils.asyncPipe(stream, process.getOutputStream(), t -> logger.warn("", t), () -> logger.trace("Finished {}", process.pid()));
-
-		return process.getInputStream();
+		return new ProcessInputStream(process, stream);
 	}
 
 	@Override
