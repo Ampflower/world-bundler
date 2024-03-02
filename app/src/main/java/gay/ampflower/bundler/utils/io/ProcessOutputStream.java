@@ -26,7 +26,7 @@ public class ProcessOutputStream extends FilterOutputStream {
 		this.process = process;
 		this.processOutput = stream;
 
-		this.ioWorker = IoUtils.asyncPipe(process.getInputStream(), stream, ioe -> this.fault = ioe, this::closeProcess);
+		this.ioWorker = IoUtils.asyncPipe(process.getInputStream(), stream, this::intrude, this::closeProcess);
 	}
 
 	private void checkOpen() throws IOException {
@@ -91,10 +91,18 @@ public class ProcessOutputStream extends FilterOutputStream {
 		try {
 			final int exit = process.waitFor();
 			if (exit != 0) {
-				fault = new IOException("Process closed abnormally: " + exit);
+				intrude(new IOException("Process closed abnormally: " + exit));
 			}
 		} catch (InterruptedException interruptedException) {
 			throw new AssertionError(interruptedException);
 		}
+	}
+
+	private void intrude(IOException fault) {
+		final var old = this.fault;
+		if (old != null) {
+			fault.addSuppressed(old);
+		}
+		this.fault = fault;
 	}
 }
