@@ -46,4 +46,15 @@ public final class NbtByteArray implements Nbt<byte[]> {
 	public String toString() {
 		return "NbtByteArray" + Arrays.toString(this.backing);
 	}
+
+	@Override
+	public boolean equals(final Object obj) {
+		if (obj == this) {
+			return true;
+		}
+		if (!(obj instanceof NbtByteArray other)) {
+			return false;
+		}
+		return Arrays.equals(backing, other.backing);
+	}
 }

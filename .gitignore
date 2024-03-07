@@ -4,6 +4,7 @@ files.*
 *.mca
 *.linear
 *.zip*
+dump-*
 
 ### Gradle ###
 .gradle

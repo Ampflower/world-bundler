@@ -2,32 +2,36 @@ package gay.ampflower.bundler.nbt;
 
 import java.util.function.IntFunction;
 
+import static gay.ampflower.bundler.utils.ArrayUtils.*;
+
 /**
  * @author Ampflower
  * @since ${version}
  **/
 public enum NbtType {
-	Null(0, Void[]::new),
-	Byte(1, byte[]::new),
-	Short(2, short[]::new),
-	Int(3, int[]::new),
-	Long(4, long[]::new),
-	Float(5, float[]::new),
-	Double(6, double[]::new),
-	ByteArray(7, NbtByteArray[]::new),
-	String(8, String[]::new),
-	List(9, NbtList[]::new),
-	Compound(10, NbtCompound[]::new),
-	IntArray(11, NbtIntArray[]::new),
-	LongArray(12, NbtLongArray[]::new),
+	Null(0, 0, Void[]::new),
+	Byte(1, BYTE_STRIDE, byte[]::new),
+	Short(2, SHORT_STRIDE, short[]::new),
+	Int(3, INT_STRIDE, int[]::new),
+	Long(4, LONG_STRIDE, long[]::new),
+	Float(5, FLOAT_STRIDE, float[]::new),
+	Double(6, DOUBLE_STRIDE, double[]::new),
+	ByteArray(7, INT_STRIDE, NbtByteArray[]::new),
+	String(8, SHORT_STRIDE, String[]::new),
+	List(9, BYTE_STRIDE + INT_STRIDE, NbtList[]::new),
+	Compound(10, 0, NbtCompound[]::new),
+	IntArray(11, INT_STRIDE, NbtIntArray[]::new),
+	LongArray(12, INT_STRIDE, NbtLongArray[]::new),
 	;
 
 	private static final NbtType[] types = values();
-	public final int type;
+	public final byte type;
+	public final int stride;
 	public final IntFunction<Object> genArray;
 
-	NbtType(int type, IntFunction<Object> genArray) {
-		this.type = type;
+	NbtType(int type, int stride, IntFunction<Object> genArray) {
+		this.type = (byte) type;
+		this.stride = stride;
 		this.genArray = genArray;
 	}
 

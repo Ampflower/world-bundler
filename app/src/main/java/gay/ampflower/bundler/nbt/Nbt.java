@@ -88,4 +88,6 @@ public sealed interface Nbt<T> permits NbtArray, NbtByteArray, NbtCompound, NbtI
 	default void push(String key, Nbt<?> value) {
 		throw new UnsupportedOperationException("Attempted to push " + key + " -> " + value + " to " + this);
 	}
+
+	boolean equals(Object other);
 }

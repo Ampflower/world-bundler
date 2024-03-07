@@ -24,12 +24,12 @@ public final class ArrayUtils {
 
 	public static final VarHandle INTS_LITTLE_ENDIAN = MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.LITTLE_ENDIAN);
 
-	public static final int BYTE_STRIDE = 1;
-	public static final int SHORT_STRIDE = 2;
-	public static final int INT_STRIDE = 4;
-	public static final int LONG_STRIDE = 8;
-	public static final int FLOAT_STRIDE = 4;
-	public static final int DOUBLE_STRIDE = 8;
+	public static final int BYTE_STRIDE = Byte.BYTES;
+	public static final int SHORT_STRIDE = Short.BYTES;
+	public static final int INT_STRIDE = Integer.BYTES;
+	public static final int LONG_STRIDE = Long.BYTES;
+	public static final int FLOAT_STRIDE = Float.BYTES;
+	public static final int DOUBLE_STRIDE = Double.BYTES;
 
 	public static final byte[] SENTINEL_BYTES = new byte[0];
 
@@ -47,6 +47,14 @@ public final class ArrayUtils {
 			return true;
 		}
 		return Arrays.equals(ref, 0, prefix.length, prefix, 0, prefix.length);
+	}
+
+	public static void copy(short[] read, int roff, byte[] write, int woff, int len, ByteOrder order) {
+		final var handle = MethodHandles.byteArrayViewVarHandle(short[].class, order);
+
+		for (int i = 0; i < len; i++) {
+			handle.set(write, woff + i * SHORT_STRIDE, read[roff + i]);
+		}
 	}
 
 	public static void copyBigEndianShorts(byte[] read, int roff, short[] write, int woff, int len) {
@@ -83,10 +91,72 @@ public final class ArrayUtils {
 		}
 	}
 
+	public static void copy(long[] read, int roff, byte[] write, int woff, int len, ByteOrder order) {
+		final var handle = MethodHandles.byteArrayViewVarHandle(long[].class, order);
+
+		for (int i = 0; i < len; i++) {
+			handle.set(write, woff + i * LONG_STRIDE, read[roff + i]);
+		}
+	}
+
 	public static void copyBigEndianLongs(byte[] read, int roff, long[] write, int woff, int len) {
 		for (int i = 0; i < len; i++) {
 			write[woff + i] = (long) LONGS_BIG_ENDIAN.get(read, roff + i * LONG_STRIDE);
 		}
+	}
+
+	public static void copyBigEndianLongs(long[] read, int roff, byte[] write, int woff, int len) {
+		for (int i = 0; i < len; i++) {
+			LONGS_BIG_ENDIAN.set(write, woff + i * LONG_STRIDE, read[roff + i]);
+		}
+	}
+
+	public static void copy(float[] read, int roff, byte[] write, int woff, int len, ByteOrder order) {
+		final var handle = MethodHandles.byteArrayViewVarHandle(float[].class, order);
+
+		for (int i = 0; i < len; i++) {
+			handle.set(write, woff + i * FLOAT_STRIDE, read[roff + i]);
+		}
+	}
+
+	public static void copy(double[] read, int roff, byte[] write, int woff, int len, ByteOrder order) {
+		final var handle = MethodHandles.byteArrayViewVarHandle(double[].class, order);
+
+		for (int i = 0; i < len; i++) {
+			handle.set(write, woff + i * DOUBLE_STRIDE, read[roff + i]);
+		}
+	}
+
+	public static float[] intsAsFloats(int[] ints) {
+		final float[] floats = new float[ints.length];
+		for (int i = 0; i < ints.length; i++) {
+			floats[i] = Float.intBitsToFloat(ints[i]);
+		}
+		return floats;
+	}
+
+	public static int[] floatsAsInts(float[] floats) {
+		final int[] ints = new int[floats.length];
+		for (int i = 0; i < floats.length; i++) {
+			ints[i] = Float.floatToRawIntBits(floats[i]);
+		}
+		return ints;
+	}
+
+	public static double[] longsAsDoubles(long[] longs) {
+		final double[] doubles = new double[longs.length];
+		for (int i = 0; i < longs.length; i++) {
+			doubles[i] = Double.longBitsToDouble(longs[i]);
+		}
+		return doubles;
+	}
+
+	public static long[] doublesAsLongs(double[] doubles) {
+		final long[] longs = new long[doubles.length];
+		for (int i = 0; i < doubles.length; i++) {
+			longs[i] = Double.doubleToRawLongBits(doubles[i]);
+		}
+		return longs;
 	}
 
 	public static byte[] concat(final byte[]... bytess) {

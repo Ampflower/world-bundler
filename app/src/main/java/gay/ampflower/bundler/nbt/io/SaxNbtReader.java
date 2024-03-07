@@ -1,6 +1,7 @@
 package gay.ampflower.bundler.nbt.io;
 
 import gay.ampflower.bundler.nbt.*;
+import gay.ampflower.bundler.utils.ArrayUtils;
 
 import java.io.IOException;
 
@@ -52,18 +53,12 @@ public final class SaxNbtReader {
 			case Long -> parser.push(new NbtArray<NbtLong>(expected, reader.readLongArray()));
 			case Float -> {
 				final var ints = reader.readIntArray();
-				final var floats = new float[ints.length];
-				for (int i = 0; i < ints.length; i++) {
-					floats[i] = Float.intBitsToFloat(ints[i]);
-				}
+				final var floats = ArrayUtils.intsAsFloats(ints);
 				parser.push(new NbtArray<NbtFloat>(expected, floats));
 			}
 			case Double -> {
 				final var longs = reader.readLongArray();
-				final var doubles = new double[longs.length];
-				for (int i = 0; i < longs.length; i++) {
-					doubles[i] = Double.longBitsToDouble(longs[i]);
-				}
+				final var doubles = ArrayUtils.longsAsDoubles(longs);
 				parser.push(new NbtArray<NbtDouble>(expected, doubles));
 			}
 			default -> {

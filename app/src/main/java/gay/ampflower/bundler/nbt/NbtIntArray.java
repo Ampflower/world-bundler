@@ -46,4 +46,15 @@ public final class NbtIntArray implements Nbt<int[]> {
 	public String toString() {
 		return "NbtIntArray" + Arrays.toString(this.backing);
 	}
+
+	@Override
+	public boolean equals(final Object obj) {
+		if (obj == this) {
+			return true;
+		}
+		if (!(obj instanceof NbtIntArray other)) {
+			return false;
+		}
+		return Arrays.equals(backing, other.backing);
+	}
 }

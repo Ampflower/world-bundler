@@ -183,4 +183,15 @@ public final class NbtList<T extends Nbt<?>> implements Nbt<List<T>> {
 	public String toString() {
 		return "NbtList<" + this.type + ">" + this.backing;
 	}
+
+	@Override
+	public boolean equals(final Object obj) {
+		if (obj == this) {
+			return true;
+		}
+		if (!(obj instanceof NbtList<?> other)) {
+			return false;
+		}
+		return backing.equals(other.backing);
+	}
 }

@@ -14,6 +14,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.function.Consumer;
 
@@ -58,9 +59,95 @@ public final class IoUtils {
 		}
 	}
 
+	public static void writeShortsBigEndian(OutputStream stream, byte[] buf, short[] shorts) throws IOException {
+		if (buf.length % ArrayUtils.SHORT_STRIDE != 0) {
+			throw new IllegalArgumentException("buf & 3 != 0: " + buf.length % ArrayUtils.SHORT_STRIDE);
+		}
+		final int len = buf.length / ArrayUtils.SHORT_STRIDE, fast = shorts.length / len;
+		int off = 0;
+		for (int count = 0; count < fast; count++, off += len) {
+			copyAndWrite(stream, shorts, off, buf, len, ByteOrder.BIG_ENDIAN);
+		}
+		copyAndWrite(stream, shorts, off, buf, shorts.length % len, ByteOrder.BIG_ENDIAN);
+	}
+
+	private static void copyAndWrite(OutputStream stream, short[] ints, int off, byte[] buf, int len, ByteOrder order) throws IOException {
+		ArrayUtils.copy(ints, off, buf, 0, len, order);
+		stream.write(buf, 0, len * ArrayUtils.SHORT_STRIDE);
+	}
+
 	public static int readIntBigEndian(InputStream stream, byte[] buf, int off) throws IOException {
 		readExact(stream, buf, off, 4);
 		return (int) ArrayUtils.INTS_BIG_ENDIAN.get(buf, off);
+	}
+
+	public static void writeIntsBigEndian(OutputStream stream, byte[] buf, int[] ints) throws IOException {
+		if (buf.length % ArrayUtils.INT_STRIDE != 0) {
+			throw new IllegalArgumentException("buf & 3 != 0: " + buf.length % ArrayUtils.INT_STRIDE);
+		}
+		final int len = buf.length / ArrayUtils.INT_STRIDE, fast = ints.length / len;
+		int off = 0;
+		for (int count = 0; count < fast; count++, off += len) {
+			copyAndWrite(stream, ints, off, buf, len, ByteOrder.BIG_ENDIAN);
+		}
+		copyAndWrite(stream, ints, off, buf, ints.length % len, ByteOrder.BIG_ENDIAN);
+	}
+
+	private static void copyAndWrite(OutputStream stream, int[] ints, int off, byte[] buf, int len, ByteOrder order) throws IOException {
+		ArrayUtils.copy(ints, off, buf, 0, len, order);
+		stream.write(buf, 0, len * ArrayUtils.INT_STRIDE);
+	}
+
+	public static void writeLongsBigEndian(OutputStream stream, byte[] buf, long[] longs) throws IOException {
+		if (buf.length % ArrayUtils.LONG_STRIDE != 0) {
+			throw new IllegalArgumentException("buf & 3 != 0: " + buf.length % ArrayUtils.LONG_STRIDE);
+		}
+		final int len = buf.length / ArrayUtils.LONG_STRIDE, fast = longs.length / len;
+		int off = 0;
+		for (int count = 0; count < fast; count++, off += len) {
+			copyAndWrite(stream, longs, off, buf, len, ByteOrder.BIG_ENDIAN);
+		}
+		copyAndWrite(stream, longs, off, buf, longs.length % len, ByteOrder.BIG_ENDIAN);
+	}
+
+	private static void copyAndWrite(OutputStream stream, long[] longs, int off, byte[] buf, int len, ByteOrder order) throws IOException {
+		ArrayUtils.copy(longs, off, buf, 0, len, order);
+		stream.write(buf, 0, len * ArrayUtils.LONG_STRIDE);
+	}
+
+
+	public static void writeFloatsBigEndian(OutputStream stream, byte[] buf, float[] floats) throws IOException {
+		if (buf.length % ArrayUtils.FLOAT_STRIDE != 0) {
+			throw new IllegalArgumentException("buf & 3 != 0: " + buf.length % ArrayUtils.FLOAT_STRIDE);
+		}
+		final int len = buf.length / ArrayUtils.FLOAT_STRIDE, fast = floats.length / len;
+		int off = 0;
+		for (int count = 0; count < fast; count++, off += len) {
+			copyAndWrite(stream, floats, off, buf, len, ByteOrder.BIG_ENDIAN);
+		}
+		copyAndWrite(stream, floats, off, buf, floats.length % len, ByteOrder.BIG_ENDIAN);
+	}
+
+	private static void copyAndWrite(OutputStream stream, float[] floats, int off, byte[] buf, int len, ByteOrder order) throws IOException {
+		ArrayUtils.copy(floats, off, buf, 0, len, order);
+		stream.write(buf, 0, len * ArrayUtils.FLOAT_STRIDE);
+	}
+
+	public static void writeDoublesBigEndian(OutputStream stream, byte[] buf, double[] doubles) throws IOException {
+		if (buf.length % ArrayUtils.DOUBLE_STRIDE != 0) {
+			throw new IllegalArgumentException("buf & 3 != 0: " + buf.length % ArrayUtils.DOUBLE_STRIDE);
+		}
+		final int len = buf.length / ArrayUtils.DOUBLE_STRIDE, fast = doubles.length / len;
+		int off = 0;
+		for (int count = 0; count < fast; count++, off += len) {
+			copyAndWrite(stream, doubles, off, buf, len, ByteOrder.BIG_ENDIAN);
+		}
+		copyAndWrite(stream, doubles, off, buf, doubles.length % len, ByteOrder.BIG_ENDIAN);
+	}
+
+	private static void copyAndWrite(OutputStream stream, double[] doubles, int off, byte[] buf, int len, ByteOrder order) throws IOException {
+		ArrayUtils.copy(doubles, off, buf, 0, len, order);
+		stream.write(buf, 0, len * ArrayUtils.DOUBLE_STRIDE);
 	}
 
 	public static Thread asyncPipe(InputStream inputStream, OutputStream outputStream, Consumer<IOException> handler, Runnable closed) {

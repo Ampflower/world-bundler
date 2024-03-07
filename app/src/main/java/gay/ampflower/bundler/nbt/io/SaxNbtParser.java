@@ -3,43 +3,45 @@ package gay.ampflower.bundler.nbt.io;
 import gay.ampflower.bundler.nbt.Nbt;
 import gay.ampflower.bundler.nbt.NbtType;
 
+import java.io.IOException;
+
 /**
  * @author Ampflower
  * @since ${version}
  **/
 public interface SaxNbtParser {
-	void field(String name);
+	void field(String name) throws IOException;
 
-	void startList(NbtType type, int size);
+	void startList(NbtType type, int size) throws IOException;
 
-	void startCompound();
+	void startCompound() throws IOException;
 
-	void endTag();
+	void endTag() throws IOException;
 
-	void ofNull();
+	void ofNull() throws IOException;
 
-	void ofByte(byte value);
+	void ofByte(byte value) throws IOException;
 
-	void ofShort(short value);
+	void ofShort(short value) throws IOException;
 
-	void ofInt(int value);
+	void ofInt(int value) throws IOException;
 
-	void ofLong(long value);
+	void ofLong(long value) throws IOException;
 
-	void ofFloat(float value);
+	void ofFloat(float value) throws IOException;
 
-	void ofDouble(double value);
+	void ofDouble(double value) throws IOException;
 
-	void ofString(String value);
+	void ofString(String value) throws IOException;
 
-	void ofByteArray(byte[] value);
+	void ofByteArray(byte[] value) throws IOException;
 
-	void ofIntArray(int[] value);
+	void ofIntArray(int[] value) throws IOException;
 
-	void ofLongArray(long[] value);
+	void ofLongArray(long[] value) throws IOException;
 
 	/**
 	 * Intrudes a value directly, bypassing the tree
 	 */
-	void push(Nbt<?> value);
+	void push(Nbt<?> value) throws IOException;
 }

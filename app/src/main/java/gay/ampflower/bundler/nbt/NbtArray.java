@@ -2,6 +2,8 @@ package gay.ampflower.bundler.nbt;
 
 import gay.ampflower.bundler.utils.ArrayUtils;
 
+import java.util.Arrays;
+
 /**
  * @author Ampflower
  * @since ${version}
@@ -90,6 +92,10 @@ public final class NbtArray<T extends Nbt<?>> implements Nbt<T[]> {
 		return (byte[]) backing;
 	}
 
+	public short[] asShortsRaw() {
+		return (short[]) backing;
+	}
+
 	@Override
 	public <T extends Nbt<?>> NbtList<T> asList() {
 		return Nbt.super.asList();
@@ -113,6 +119,14 @@ public final class NbtArray<T extends Nbt<?>> implements Nbt<T[]> {
 	@Override
 	public long[] asLongsRaw() {
 		return (long[]) backing;
+	}
+
+	public float[] asFloatsRaw() {
+		return (float[]) backing;
+	}
+
+	public double[] asDoublesRaw() {
+		return (double[]) backing;
 	}
 
 	private void check(NbtType type, Nbt<?> addition) {
@@ -158,5 +172,26 @@ public final class NbtArray<T extends Nbt<?>> implements Nbt<T[]> {
 	@Override
 	public String toString() {
 		return "NbtArray<" + this.type + ">" + ArrayUtils.toString(backing);
+	}
+
+	@Override
+	public boolean equals(final Object obj) {
+		if (obj == this) {
+			return true;
+		}
+		if (!(obj instanceof NbtArray<?> other) || type != other.type) {
+			return false;
+		}
+		return switch (this.type) {
+			case Null -> true;
+			case Byte -> Arrays.equals((byte[]) backing, (byte[]) other.backing);
+			case Short -> Arrays.equals((short[]) backing, (short[]) other.backing);
+			case Int -> Arrays.equals((int[]) backing, (int[]) other.backing);
+			case Long -> Arrays.equals((long[]) backing, (long[]) other.backing);
+			case Float -> Arrays.equals((float[]) backing, (float[]) other.backing);
+			case Double -> Arrays.equals((double[]) backing, (double[]) other.backing);
+			case ByteArray, List, Compound, IntArray, LongArray -> Arrays.equals(asNbtArray(), other.asNbtArray());
+			case String -> Arrays.equals((String[]) backing, (String[]) other.backing);
+		};
 	}
 }

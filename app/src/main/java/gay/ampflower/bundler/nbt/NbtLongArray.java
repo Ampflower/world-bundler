@@ -46,4 +46,15 @@ public final class NbtLongArray implements Nbt<long[]> {
 	public String toString() {
 		return "[L;" + Arrays.toString(this.backing) + ']';
 	}
+
+	@Override
+	public boolean equals(final Object obj) {
+		if (obj == this) {
+			return true;
+		}
+		if (!(obj instanceof NbtLongArray other)) {
+			return false;
+		}
+		return Arrays.equals(backing, other.backing);
+	}
 }

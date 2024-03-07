@@ -173,4 +173,15 @@ public final class NbtCompound implements Nbt<Map<String, Nbt<?>>> {
 	public String toString() {
 		return asStringifiedNbt(new StringBuilder("NbtCompound")).toString();
 	}
+
+	@Override
+	public boolean equals(final Object obj) {
+		if (obj == this) {
+			return true;
+		}
+		if (!(obj instanceof NbtCompound other)) {
+			return false;
+		}
+		return backing.equals(other.backing);
+	}
 }
