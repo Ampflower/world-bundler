@@ -139,7 +139,7 @@ public class BundlerHandler implements RegionHandler {
 
 		for (int i = 0; i < Region.CHUNK_COUNT; i++) {
 			var chunk = region.chunks()[i];
-			if (chunk == null || chunk.array().length == 0) {
+			if (chunk == null || chunk.isEmpty()) {
 				continue;
 			}
 
@@ -152,20 +152,22 @@ public class BundlerHandler implements RegionHandler {
 			}
 			last = i;
 
-			INT_HANDLE.set(buf, 0, chunk.array().length);
+			final var data = chunk.array();
+
+			INT_HANDLE.set(buf, 0, data.length);
 			INT_HANDLE.set(buf, 4, chunk.timestamp());
 
 			count++;
 
 			stream.write(buf);
-			stream.write(chunk.array());
+			stream.write(data);
 
-			adler.update(chunk.array());
+			adler.update(data);
 			int adlerValue = (int) adler.getValue();
 			INT_HANDLE.set(buf, 0, adlerValue);
 			adler.reset();
 
-			logger.trace("Wrote {} bytes @ {} with timestamp {} & chksum {}", chunk.array().length, i, chunk.timestamp(), Integer.toUnsignedString(adlerValue, 16));
+			logger.trace("Wrote {} bytes @ {} with timestamp {} & chksum {}", data.length, i, chunk.timestamp(), Integer.toUnsignedString(adlerValue, 16));
 		}
 		int delta = Region.CHUNK_COUNT - last;
 		if (delta > 1) {

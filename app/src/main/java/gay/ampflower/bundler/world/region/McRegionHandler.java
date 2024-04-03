@@ -243,8 +243,8 @@ public class McRegionHandler implements RegionHandler {
 					x + Region.getChunkX(i),
 					y + Region.getChunkY(i),
 					timestamps[i],
-					arrays[i].bytes(),
-					arrays[i].parsed());
+					arrays[i].parsed(),
+					arrays[i].bytes().length);
 			}
 		}
 
@@ -309,19 +309,20 @@ public class McRegionHandler implements RegionHandler {
 	}
 
 	@CheckReturnValue
-	private static byte[][] compressChunks(final Region region, final int[] sizes, final ChunkEntry[] entries) {
+	private static byte[][] compressChunks(final Region region, final int[] sizes, final ChunkEntry[] entries) throws IOException {
 		final var deflater = new Deflater(Deflater.BEST_COMPRESSION);
 		final var write = new byte[Region.CHUNK_COUNT][];
 		int offset = INITIAL_SECTOR_OFFSET;
 
-		for(int i = 0; i < Region.CHUNK_COUNT; i++) {
+		for (int i = 0; i < Region.CHUNK_COUNT; i++) {
 			final var chunk = region.chunks()[i];
 			final int timestamp;
 			if (chunk != null && chunk.size() > 0) {
-				IoUtils.verifyNbt(chunk.array(), i);
-				deflater.setInput(chunk.array());
+				byte[] data = chunk.array();
+				IoUtils.verifyNbt(data, i);
+				deflater.setInput(data);
 				deflater.finish();
-				final var toWrite = new byte[sectors(chunk.array().length) * SECTOR];
+				final var toWrite = new byte[sectors(data.length) * SECTOR];
 				final var toSize = deflater.deflate(toWrite);
 				if (!deflater.finished()) {
 					logger.warn("Discarded {} as : {}", i, toWrite);

@@ -52,7 +52,7 @@ public record Region(
 
 	public boolean isEmpty() {
 		for (final var chunk : chunks) {
-			if (chunk != null && chunk.size() > 0) {
+			if (chunk != null && !chunk.isEmpty()) {
 				return false;
 			}
 		}
@@ -61,7 +61,7 @@ public record Region(
 
 	public boolean isFull() {
 		for (final var chunk : chunks) {
-			if (chunk == null || chunk.size() == 0) {
+			if (chunk == null || chunk.isEmpty()) {
 				return false;
 			}
 		}
@@ -71,7 +71,7 @@ public record Region(
 	public int popCount() {
 		int i = 0;
 		for (final var chunk : chunks) {
-			if (chunk != null && chunk.size() > 0) {
+			if (chunk != null && !chunk.isEmpty()) {
 				i++;
 			}
 		}
@@ -99,8 +99,8 @@ public record Region(
 	}
 
 	private static boolean chunksEqual(final Chunk a, final Chunk b) {
-		boolean an = a == null || a.size() == 0;
-		boolean bn = b == null || b.size() == 0;
+		boolean an = a == null || a.isEmpty();
+		boolean bn = b == null || b.isEmpty();
 		return (an & bn) || (!an && a.equals(b));
 	}
 

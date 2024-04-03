@@ -16,6 +16,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.Set;
 
 /**
@@ -165,16 +166,22 @@ public class LinearHandler implements RegionHandler {
 
 		int size = 0, count = 0;
 
+		final var chunks = new ArrayList<byte[]>();
+
 		for (int i = 0; i < Region.CHUNK_COUNT; i++) {
 			int metaIndex = i * 2;
 
 			var chunk = region.chunks()[i];
-			if (chunk == null || chunk.array().length == 0) {
+			if (chunk == null || chunk.isEmpty()) {
 				continue;
 			}
 
+			var bytes = chunk.array();
+
+			chunks.add(bytes);
+
 			count++;
-			size += chunkMeta[metaIndex] = chunk.array().length;
+			size += chunkMeta[metaIndex] = bytes.length;
 			chunkMeta[metaIndex + 1] = chunk.timestamp();
 		}
 
@@ -182,10 +189,9 @@ public class LinearHandler implements RegionHandler {
 		final byte[] bytes = new byte[size + offset];
 		ArrayUtils.copy(chunkMeta, 0, bytes, 0, chunkMeta.length, ByteOrder.BIG_ENDIAN);
 
-		for (var chunk : region.chunks()) {
-			if (chunk == null || chunk.array().length == 0) continue;
-			System.arraycopy(chunk.array(), 0, bytes, offset, chunk.array().length);
-			offset += chunk.array().length;
+		for (var chunk : chunks) {
+			System.arraycopy(chunk, 0, bytes, offset, chunk.length);
+			offset += chunk.length;
 		}
 
 		return new Chunks(count, ZstdCompressor.INSTANCE.deflate(bytes));

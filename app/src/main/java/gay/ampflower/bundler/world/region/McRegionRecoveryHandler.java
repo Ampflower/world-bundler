@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * @author Ampflower
@@ -119,6 +120,10 @@ public final class McRegionRecoveryHandler extends McRegionHandler implements Re
 		}
 
 		logger.info("Recovered {} chunks from [{},{}]; previously {}", region.popCount(), x, y, previous);
+
+		if (chunks.isEmpty()) {
+			return region;
+		}
 
 		return region.meta(chunks);
 	}
@@ -280,23 +285,23 @@ public final class McRegionRecoveryHandler extends McRegionHandler implements Re
 			final var regionChunk = regionChunks[c];
 
 			if (regionChunk == null) {
-				regionChunks[c] = new Chunk(pos.x(), pos.y(), -1, chunk.bytes(), chunk.parsed());
+				regionChunks[c] = new Chunk(pos.x(), pos.y(), -1, chunk.parsed(), chunk.bytes().length);
 				return true;
 			}
 
-			if (!Arrays.equals(regionChunk.array(), chunk.bytes())) {
-				final var regionLastUpdate = ChunkDataUtil.getLastUpdate((Nbt<?>) regionChunk.meta());
+			if (!Objects.equals(regionChunk.nbt(), chunk.parsed())) {
+				final var regionLastUpdate = ChunkDataUtil.getLastUpdate((Nbt<?>) regionChunk.nbt());
 				final var chunkLastUpdate = ChunkDataUtil.getLastUpdate((Nbt<?>) chunk.parsed());
 
 				if (chunkLastUpdate > regionLastUpdate) {
 					logger.debug("Favouring [{},{}][{},{}] as it is newer; recovered: {} vs. old: {}",
 						region.x(), region.y(), pos.x(), pos.y(), chunkLastUpdate, regionLastUpdate);
-					regionChunks[c] = new Chunk(pos.x(), pos.y(), -1, chunk.bytes(), chunk.parsed());
+					regionChunks[c] = new Chunk(pos.x(), pos.y(), -1, chunk.parsed(), chunk.bytes().length);
 					return true;
 				}
 
 				logger.debug("Dropping [{},{}][{},{}]", region.x(), region.y(), pos.x(), pos.y());
-				logger.trace("{} was favoured over {}", regionChunk.meta(), chunk.parsed());
+				logger.trace("{} was favoured over {}", regionChunk.nbt(), chunk.parsed());
 			}
 		}
 		return true;

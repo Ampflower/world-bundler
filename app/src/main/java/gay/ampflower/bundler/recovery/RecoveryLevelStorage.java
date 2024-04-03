@@ -135,7 +135,7 @@ public class RecoveryLevelStorage {
 			return true;
 		}
 
-		if (!Arrays.equals(recoveredChunk.array(), swapChunk.array())) {
+		if (!Objects.equals(recoveredChunk.nbt(), swapChunk.nbt())) {
 			logger.warn("Chunk @ region[{},{}][{}] mismatch swap[{},{}], doing invasive comparison",
 				origin.x(), origin.y(), i, destination.x(), destination.y());
 
@@ -170,7 +170,7 @@ public class RecoveryLevelStorage {
 	}
 
 	private static Pos2i getPosition(Chunk chunk) {
-		return ChunkDataUtil.getPosition(ChunkDataUtil.getNbt(chunk));
+		return ChunkDataUtil.getPosition(chunk.nbt());
 	}
 
 	private ChunkStorage sniff(NbtCompound compound) {

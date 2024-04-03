@@ -1,5 +1,6 @@
 package gay.ampflower.bundler.world.region;
 
+import gay.ampflower.bundler.nbt.NbtCompound;
 import gay.ampflower.bundler.utils.ArrayUtils;
 import gay.ampflower.bundler.utils.LogUtils;
 import gay.ampflower.bundler.world.Chunk;
@@ -26,6 +27,17 @@ public class RegionHandlerTest {
 	private static final RegionHandler[] handlers = {BundlerHandler.INSTANCE, LinearHandler.INSTANCE,
 		McRegionHandler.INSTANCE, McRegionRecoveryHandler.INSTANCE};
 	private static final Logger logger = LogUtils.logger();
+	private static final NbtCompound empty = new NbtCompound();
+
+	@Test
+	public void testHandlersAndEmptyRegionsProvider() {
+		handlersAndEmptyRegions();
+	}
+
+	@Test
+	public void testHandlersAndRegionsProvider() {
+		handlersAndRegions();
+	}
 
 	@Test(dataProvider = "handlersAndEmptyRegions")
 	public void checkHandlerReturnsNull(final RegionHandler handler, final Region region) throws IOException {
@@ -52,6 +64,14 @@ public class RegionHandlerTest {
 		Assert.assertEquals(sample, expected);
 	}
 
+	public static Chunk emptyChunk(int i) {
+		return new Chunk(Region.getChunkX(0, i), Region.getChunkY(0, i), 0, null, 0);
+	}
+
+	public static Chunk emptyCompoundChunk(int i) {
+		return new Chunk(Region.getChunkX(0, i), Region.getChunkY(0, i), 0, empty, 4);
+	}
+
 	private static Chunk[] emptyChunks() {
 		final var chunks = new Chunk[Region.CHUNK_COUNT];
 		for (int i = 0; i < Region.CHUNK_COUNT; i++) {
@@ -76,18 +96,18 @@ public class RegionHandlerTest {
 
 		for (int i = 0; i < Region.CHUNK_COUNT; i++) {
 			final var chunks = new Chunk[Region.CHUNK_COUNT];
-			chunks[i] = new Chunk(0, 0, i, 0, new byte[]{10, 0, 0, 0});
+			chunks[i] = emptyCompoundChunk(i);
 			regions[i] = new Region(0, 0, chunks);
 		}
 
 		final var chunksTemplate = new Chunk[Region.CHUNK_COUNT];
 		for (int c = 0; c < Region.CHUNK_COUNT; c++) {
-			chunksTemplate[c] = new Chunk(0, 0, c, 0, ArrayUtils.SENTINEL_BYTES);
+			chunksTemplate[c] = emptyChunk(c);
 		}
 
 		for (int i = 0; i < Region.CHUNK_COUNT; i++) {
 			final var chunks = chunksTemplate.clone();
-			chunks[i] = new Chunk(0, 0, i, 0, new byte[]{10, 0, 0, 0});
+			chunks[i] = emptyCompoundChunk(i);
 			regions[i + 1024] = new Region(0, 0, chunks);
 		}
 
@@ -95,7 +115,7 @@ public class RegionHandlerTest {
 			final var chunks = new Chunk[Region.CHUNK_COUNT];
 			int jmp = 1 << i, masq = jmp - 1;
 			for (int c = 0; c < Region.CHUNK_COUNT; c++) {
-				chunks[c] = new Chunk(0, 0, c, 0, new byte[]{10, 0, 0, 0});
+				chunks[c] = emptyCompoundChunk(c);
 				if ((c & masq) == masq) c += jmp;
 			}
 			regions[i + 2048] = new Region(0, 0, chunks);
