@@ -40,3 +40,9 @@ application {
 	// Define the main class for the application.
 	mainClass.set("gay.ampflower.bundler.App")
 }
+
+tasks {
+	withType<JavaCompile> {
+		options.compilerArgs.addAll(listOf("-Xlint:unchecked", "-Xlint:deprecation"))
+	}
+}
