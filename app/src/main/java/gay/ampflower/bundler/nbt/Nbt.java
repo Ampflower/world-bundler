@@ -4,7 +4,7 @@ package gay.ampflower.bundler.nbt;
  * @author Ampflower
  * @since ${version}
  **/
-public sealed interface Nbt<T> permits NbtArray, NbtByteArray, NbtCompound, NbtIntArray, NbtList, NbtLongArray, NbtNull, NbtNumber, NbtString {
+public sealed interface Nbt<T> permits NbtArrayList, NbtByteArray, NbtCompound, NbtIntArray, NbtList, NbtLongArray, NbtNull, NbtNumber, NbtString {
 	byte TRUE = 1;
 	byte FALSE = 0;
 

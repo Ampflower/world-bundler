@@ -1,4 +1,4 @@
-package gay.ampflower.bundler.utils;
+package gay.ampflower.bundler.utils.transform;
 
 import it.unimi.dsi.fastutil.longs.LongIterator;
 
@@ -9,11 +9,11 @@ import java.util.function.LongFunction;
  * @author Ampflower
  * @since ${version}
  **/
-public class LongTransiterator<O> implements Iterator<O> {
+public class LongTransformingIterator<O> implements Iterator<O> {
 	private final LongIterator input;
 	private final LongFunction<O> transformer;
 
-	public LongTransiterator(LongIterator input, LongFunction<O> transformer) {
+	public LongTransformingIterator(LongIterator input, LongFunction<O> transformer) {
 		this.input = input;
 		this.transformer = transformer;
 	}

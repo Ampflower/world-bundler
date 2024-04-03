@@ -33,7 +33,7 @@ public class SaxTreeWriter implements SaxNbtParser {
 
 	@Override
 	public void startList(final NbtType type, final int size) {
-		pushLast(new NbtList<>(size, type));
+		pushLast(NbtList.of(type, size));
 	}
 
 	@Override

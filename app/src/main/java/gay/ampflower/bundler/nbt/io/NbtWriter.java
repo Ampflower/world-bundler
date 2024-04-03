@@ -1,8 +1,6 @@
 package gay.ampflower.bundler.nbt.io;
 
-import gay.ampflower.bundler.nbt.Nbt;
-import gay.ampflower.bundler.nbt.NbtArray;
-import gay.ampflower.bundler.nbt.NbtType;
+import gay.ampflower.bundler.nbt.*;
 import gay.ampflower.bundler.utils.ArrayUtils;
 import gay.ampflower.bundler.utils.io.DataUtils;
 import gay.ampflower.bundler.utils.io.IoUtils;
@@ -94,6 +92,13 @@ public class NbtWriter implements AutoCloseable, SaxNbtParser {
 		final int newBitIndex = (bitIndex & bitIndexMask) + 1;
 		this.bitIndex = newBitIndex;
 		this.bitLists.set(newBitIndex, false);
+	}
+
+	private void pushStack(boolean list) {
+		final int newBitIndex = (bitIndex & bitIndexMask) + 1;
+		final int isList = list ? bitIndexList : 0;
+		this.bitIndex = newBitIndex | isList;
+		this.bitLists.set(newBitIndex, list);
 	}
 
 	@Override
@@ -238,23 +243,31 @@ public class NbtWriter implements AutoCloseable, SaxNbtParser {
 	}
 
 	@Override
-	public void push(final Nbt<?> value) throws IOException {
-		if (value instanceof NbtArray<?> array) {
-			writeField(NbtType.List);
-			final NbtType component = array.getComponentType();
-			available(BYTE_STRIDE);
-			writeType(component);
-			switch (component) {
-				case Byte -> writeBytes(array.asBytesRaw());
-				case Short -> writeShorts(array.asShortsRaw());
-				case Int -> writeInts(array.asIntsRaw());
-				case Long -> writeLongs(array.asLongsRaw());
-				case Float -> writeFloats(array.asFloatsRaw());
-				case Double -> writeDoubles(array.asDoublesRaw());
-				default -> throw new IllegalArgumentException("unknown: " + component);
+	public void push(final NbtList<? extends Nbt<?>> list) throws IOException {
+		writeField(NbtType.List);
+		final NbtType component = list.getComponentType();
+		available(NbtType.List.stride);
+		writeType(component);
+		switch (list.getComponentType()) {
+			case Null -> {
+				INT_HANDLE.set(buf, index, list.size());
+				index += INT_STRIDE;
 			}
-			return;
+			case Byte -> writeBytes(((NbtByteList) list).toRawArray());
+			case Short -> writeShorts(((NbtShortList) list).toRawArray());
+			case Int -> writeInts(((NbtIntList) list).toRawArray());
+			case Long -> writeLongs(((NbtLongList) list).toRawArray());
+			case Float -> writeFloats(((NbtFloatList) list).toRawArray());
+			case Double -> writeDoubles(((NbtDoubleList) list).toRawArray());
+			default -> {
+				pushStack(true);
+				INT_HANDLE.set(buf, index, list.size());
+				index += INT_STRIDE;
+				for (final var value : (NbtGenericList<?>) list) {
+					push(value);
+				}
+				endTag();
+			}
 		}
-		throw new IllegalArgumentException();
 	}
 }

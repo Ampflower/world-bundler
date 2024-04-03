@@ -40,6 +40,10 @@ public final class DataUtils {
 
 	// Could be better; this is kinda fast & lazy
 	public static byte[] writeString(String string) {
+		if (string == null || string.isEmpty()) {
+			return new byte[2];
+		}
+
 		if (string.length() > MAX_STRING_SIZE) {
 			throw new IllegalArgumentException("input length");
 		}

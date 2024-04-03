@@ -169,6 +169,10 @@ public final class NbtCompound implements Nbt<Map<String, Nbt<?>>> {
 		return NbtUtil.truncWith(builder, '}');
 	}
 
+	public Iterable<Map.Entry<String, Nbt<?>>> entries() {
+		return backing.entrySet();
+	}
+
 	@Override
 	public String toString() {
 		return asStringifiedNbt(new StringBuilder("NbtCompound")).toString();

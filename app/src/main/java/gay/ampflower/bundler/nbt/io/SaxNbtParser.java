@@ -1,7 +1,6 @@
 package gay.ampflower.bundler.nbt.io;
 
-import gay.ampflower.bundler.nbt.Nbt;
-import gay.ampflower.bundler.nbt.NbtType;
+import gay.ampflower.bundler.nbt.*;
 
 import java.io.IOException;
 
@@ -43,5 +42,75 @@ public interface SaxNbtParser {
 	/**
 	 * Intrudes a value directly, bypassing the tree
 	 */
-	void push(Nbt<?> value) throws IOException;
+	default void push(Nbt<?> value) throws IOException {
+		switch (value.getType()) {
+			case Null -> ofNull();
+			case Byte -> ofByte(value.asByte());
+			case Short -> ofShort(value.asShort());
+			case Int -> ofInt(value.asInt());
+			case Long -> ofLong(value.asLong());
+			case Float -> ofFloat(value.asFloat());
+			case Double -> ofDouble(value.asDouble());
+			case ByteArray -> ofByteArray(value.asBytesRaw());
+			case String -> ofString(value.asString());
+			case List -> push((NbtList<?>) value);
+			case Compound -> push((NbtCompound) value);
+			case IntArray -> ofIntArray(value.asIntsRaw());
+			case LongArray -> ofLongArray(value.asLongsRaw());
+			default -> throw new AssertionError("unknown: " + value);
+		}
+	}
+
+	default void push(NbtList<? extends Nbt<?>> list) throws IOException {
+		startList(list.getComponentType(), list.size());
+		switch (list.getComponentType()) {
+			case Null -> {
+			}
+			case Byte -> {
+				for (final var value : ((NbtByteList) list).toRawArray()) {
+					ofByte(value);
+				}
+			}
+			case Short -> {
+				for (final var value : ((NbtShortList) list).toRawArray()) {
+					ofShort(value);
+				}
+			}
+			case Int -> {
+				for (final var value : ((NbtIntList) list).toRawArray()) {
+					ofInt(value);
+				}
+			}
+			case Long -> {
+				for (final var value : ((NbtLongList) list).toRawArray()) {
+					ofLong(value);
+				}
+			}
+			case Float -> {
+				for (final var value : ((NbtFloatList) list).toRawArray()) {
+					ofFloat(value);
+				}
+			}
+			case Double -> {
+				for (final var value : ((NbtDoubleList) list).toRawArray()) {
+					ofDouble(value);
+				}
+			}
+			default -> {
+				for (final var value : (NbtGenericList<?>) list) {
+					push(value);
+				}
+			}
+		}
+		endTag();
+	}
+
+	default void push(NbtCompound compound) throws IOException {
+		startCompound();
+		for (final var entry : compound.entries()) {
+			field(entry.getKey());
+			push(entry.getValue());
+		}
+		ofNull();
+	}
 }

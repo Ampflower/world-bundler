@@ -45,21 +45,21 @@ public final class SaxNbtReader {
 				if (count != 0) {
 					throw new AssertionError("Non-zero nulls: " + count);
 				}
-				parser.push(NbtArray.EMPTY);
+				parser.push(NbtList.empty());
 			}
-			case Byte -> parser.push(new NbtArray<NbtByte>(expected, reader.readByteArray()));
-			case Short -> parser.push(new NbtArray<NbtShort>(expected, reader.readShortArray()));
-			case Int -> parser.push(new NbtArray<NbtInt>(expected, reader.readIntArray()));
-			case Long -> parser.push(new NbtArray<NbtLong>(expected, reader.readLongArray()));
+			case Byte -> parser.push(new NbtByteList(reader.readByteArray()));
+			case Short -> parser.push(new NbtShortList(reader.readShortArray()));
+			case Int -> parser.push(new NbtIntList(reader.readIntArray()));
+			case Long -> parser.push(new NbtLongList(reader.readLongArray()));
 			case Float -> {
 				final var ints = reader.readIntArray();
 				final var floats = ArrayUtils.intsAsFloats(ints);
-				parser.push(new NbtArray<NbtFloat>(expected, floats));
+				parser.push(new NbtFloatList(floats));
 			}
 			case Double -> {
 				final var longs = reader.readLongArray();
 				final var doubles = ArrayUtils.longsAsDoubles(longs);
-				parser.push(new NbtArray<NbtDouble>(expected, doubles));
+				parser.push(new NbtDoubleList(doubles));
 			}
 			default -> {
 				final int count = reader.readInt();

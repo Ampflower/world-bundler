@@ -1,9 +1,9 @@
 package gay.ampflower.bundler.world;
 
 import gay.ampflower.bundler.compress.Compressor;
-import gay.ampflower.bundler.utils.LongTransiterator;
 import gay.ampflower.bundler.utils.function.FileResolver;
 import gay.ampflower.bundler.utils.pos.Pos2i;
+import gay.ampflower.bundler.utils.transform.LongTransformingIterator;
 import gay.ampflower.bundler.world.io.ChunkReader;
 import gay.ampflower.bundler.world.io.ChunkStorage;
 import gay.ampflower.bundler.world.io.ChunkWriter;
@@ -89,12 +89,12 @@ public class RegionedChunkStorage implements ChunkStorage {
 
 	@Override
 	public Iterator<Pos2i> iterateRegionCoords() throws IOException {
-		return new LongTransiterator<>(regionResolver.iterate(workingDirectory).iterator(), Pos2i::new);
+		return new LongTransformingIterator<>(regionResolver.iterate(workingDirectory).iterator(), Pos2i::new);
 	}
 
 	@Override
 	public Iterator<Region> iterateRegions() throws IOException {
-		return new LongTransiterator<>(iterateRegionCoordsRaw(), l -> {
+		return new LongTransformingIterator<>(iterateRegionCoordsRaw(), l -> {
 			int x = (int) (l >>> 32);
 			int y = (int) l;
 

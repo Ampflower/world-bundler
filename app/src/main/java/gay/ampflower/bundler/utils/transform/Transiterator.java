@@ -1,4 +1,4 @@
-package gay.ampflower.bundler.utils;
+package gay.ampflower.bundler.utils.transform;
 
 import java.util.Iterator;
 import java.util.function.Function;

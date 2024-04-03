@@ -1,5 +1,14 @@
 package gay.ampflower.bundler.nbt;
 
+import gay.ampflower.bundler.utils.transform.*;
+import it.unimi.dsi.fastutil.bytes.ByteIterators;
+import it.unimi.dsi.fastutil.doubles.DoubleIterators;
+import it.unimi.dsi.fastutil.floats.FloatIterators;
+import it.unimi.dsi.fastutil.ints.IntIterators;
+import it.unimi.dsi.fastutil.longs.LongIterators;
+import it.unimi.dsi.fastutil.shorts.ShortIterators;
+
+import java.util.Iterator;
 import java.util.function.Function;
 
 /**
@@ -113,6 +122,30 @@ public final class NbtUtil {
 			builder.append(toString.apply(value)).append(',');
 		}
 		return builder;
+	}
+
+	public static Iterator<NbtByte> iterate(byte[] value) {
+		return new ByteTransformingIterator<>(ByteIterators.wrap(value), NbtByte::new);
+	}
+
+	public static Iterator<NbtShort> iterate(short[] value) {
+		return new ShortTransformingIterator<>(ShortIterators.wrap(value), NbtShort::new);
+	}
+
+	public static Iterator<NbtInt> iterate(int[] value) {
+		return new IntTransformingIterator<>(IntIterators.wrap(value), NbtInt::new);
+	}
+
+	public static Iterator<NbtLong> iterate(long[] value) {
+		return new LongTransformingIterator<>(LongIterators.wrap(value), NbtLong::new);
+	}
+
+	public static Iterator<NbtFloat> iterate(float[] value) {
+		return new FloatTransformingIterator<>(FloatIterators.wrap(value), NbtFloat::new);
+	}
+
+	public static Iterator<NbtDouble> iterate(double[] value) {
+		return new DoubleTransformingIterator<>(DoubleIterators.wrap(value), NbtDouble::new);
 	}
 
 	public static StringBuilder truncBy(StringBuilder builder, int len) {
