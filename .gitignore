@@ -6,6 +6,10 @@ files.*
 *.zip*
 dump-*
 
+### Debug ###
+hs_err*.log
+java_pid*
+
 ### Gradle ###
 .gradle
 build/
