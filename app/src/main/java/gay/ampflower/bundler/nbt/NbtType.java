@@ -1,8 +1,14 @@
 package gay.ampflower.bundler.nbt;
 
+import java.io.IOException;
 import java.util.function.IntFunction;
 
-import static gay.ampflower.bundler.utils.ArrayUtils.*;
+import static gay.ampflower.bundler.utils.ArrayUtils.BYTE_STRIDE;
+import static gay.ampflower.bundler.utils.ArrayUtils.DOUBLE_STRIDE;
+import static gay.ampflower.bundler.utils.ArrayUtils.FLOAT_STRIDE;
+import static gay.ampflower.bundler.utils.ArrayUtils.INT_STRIDE;
+import static gay.ampflower.bundler.utils.ArrayUtils.LONG_STRIDE;
+import static gay.ampflower.bundler.utils.ArrayUtils.SHORT_STRIDE;
 
 /**
  * @author Ampflower
@@ -37,5 +43,16 @@ public enum NbtType {
 
 	public static NbtType byId(int id) {
 		return types[id];
+	}
+
+	public static NbtType byCheckedId(int id) throws IOException {
+		if (id >= 0 && id < types.length) {
+			return types[id];
+		}
+		throw new IOException("unknown ID: " + id);
+	}
+
+	public boolean isNumber() {
+		return this != Null && this.type <= Double.type;
 	}
 }

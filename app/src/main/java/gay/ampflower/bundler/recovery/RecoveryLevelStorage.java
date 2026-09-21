@@ -14,7 +14,12 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author Ampflower
@@ -125,13 +130,14 @@ public class RecoveryLevelStorage {
 
 	private static boolean writeNewChunk(final Chunk swapChunk, final Chunk recoveredChunk, final Pos2i origin,
 													 final Pos2i destination, int i) {
-		if (recoveredChunk == null || recoveredChunk.size() == 0) {
+		if (recoveredChunk == null || recoveredChunk.isEmpty()) {
 			return false;
 		}
 
-		if (swapChunk == null || swapChunk.size() == 0) {
+		if (swapChunk == null || swapChunk.isEmpty()) {
 			logger.info("Putting chunk @ recovery[{},{}][{}] in swap[{},{}] as is",
-				origin.x(), origin.y(), i, destination.x(), destination.y());
+				origin.x(), origin.y(), i, destination.x(), destination.y()
+			);
 			return true;
 		}
 

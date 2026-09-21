@@ -7,6 +7,7 @@ import gay.ampflower.bundler.nbt.io.SaxTreeWriter;
 import gay.ampflower.bundler.utils.ArrayUtils;
 import gay.ampflower.bundler.utils.LogUtils;
 import gay.ampflower.bundler.world.region.McRegionHandler;
+import org.apache.commons.compress.utils.CountingInputStream;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
@@ -200,8 +201,13 @@ public final class IoUtils {
 	}
 
 	public static int[] readBigEndian(InputStream stream, byte[] buf) throws IOException {
-		if((buf.length & 3) != 0) throw new IllegalArgumentException();
-		if(stream.readNBytes(buf, 0, buf.length) != buf.length) throw new IOException("Incomplete read");
+		if ((buf.length & 3) != 0) {
+			throw new IllegalArgumentException();
+		}
+		final int read = stream.readNBytes(buf, 0, buf.length);
+		if (read != buf.length) {
+			throw new IOException("Incomplete read: expected " + buf.length + " bytes, got " + read + " bytes");
+		}
 
 		final var output = new int[buf.length >> 2];
 		ArrayUtils.copyBigEndianInts(buf, output);
@@ -218,19 +224,23 @@ public final class IoUtils {
 		final int length = ((short) ArrayUtils.SHORTS_BIG_ENDIAN.get(nbt, 1)) & 0xFFFF;
 		if (length != 0) {
 			logger.warn("Possible corruption: Non-zero name length at chunk {}: Got {}: {}",
-				chunk, length, ArrayUtils.urlEncoded(nbt, 3, length, 64));
+				chunk, length, ArrayUtils.urlEncoded(nbt, 3, length, 64)
+			);
 		}
 
 		final var stw = new SaxTreeWriter();
 		final var bai = new ByteArrayInputStream(nbt);
-		final var nr = new NbtReader(bai);
+		final var cis = new CountingInputStream(bai);
+		final var nr = new NbtReader(cis);
 
 		try {
 			SaxNbtReader.parse(stw, nr);
 		} catch (OutOfMemoryError oome) {
 			logger.warn("Exhausted available memory reading chunk @ {}", chunk, oome);
+			logger.warn("Caught at path: {}\nRead {} bytes", stw, cis.getBytesRead());
 			throw new AssertionError(oome);
 		} catch (IOException ioe) {
+			logger.warn("Caught at path: {}\nRead {} bytes", stw, cis.getBytesRead());
 			throw new AssertionError(ioe);
 		}
 

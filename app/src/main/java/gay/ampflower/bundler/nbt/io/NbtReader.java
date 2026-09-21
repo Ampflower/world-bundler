@@ -8,7 +8,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.invoke.VarHandle;
 
-import static gay.ampflower.bundler.utils.ArrayUtils.*;
+import static gay.ampflower.bundler.utils.ArrayUtils.BYTE_STRIDE;
+import static gay.ampflower.bundler.utils.ArrayUtils.DOUBLE_STRIDE;
+import static gay.ampflower.bundler.utils.ArrayUtils.FLOAT_STRIDE;
+import static gay.ampflower.bundler.utils.ArrayUtils.INT_STRIDE;
+import static gay.ampflower.bundler.utils.ArrayUtils.LONG_STRIDE;
+import static gay.ampflower.bundler.utils.ArrayUtils.SHORT_STRIDE;
 
 /**
  * @author Ampflower
@@ -34,7 +39,9 @@ public class NbtReader implements AutoCloseable {
 		if (ib - ia < available) {
 			alignAndRead();
 		}
-		if (ib == 0) throw new IOException("Not enough available");
+		if (ib < Math.min(available, buf.length)) {
+			throw new IOException("Not enough available: required " + available + " bytes");
+		}
 	}
 
 	private void alignAndRead() throws IOException {
@@ -45,7 +52,7 @@ public class NbtReader implements AutoCloseable {
 	}
 
 	public NbtType readType() throws IOException {
-		return NbtType.byId(readByte());
+		return NbtType.byCheckedId(readByte());
 	}
 
 	public byte readByte() throws IOException {
@@ -119,8 +126,8 @@ public class NbtReader implements AutoCloseable {
 		int read = 0, ic;
 		while (read < size) {
 			available((size - read) * SHORT_STRIDE);
-			ic = Math.min((ib - ia) / SHORT_STRIDE, size);
-			ArrayUtils.copyBigEndianShorts(buf, ia, shorts, 0, ic);
+			ic = Math.min((ib - ia) / SHORT_STRIDE, size - read);
+			ArrayUtils.copyBigEndianShorts(buf, ia, shorts, read, ic);
 			read += ic;
 			ia += ic * SHORT_STRIDE;
 			assert ia <= ib : "Overread";
@@ -138,8 +145,8 @@ public class NbtReader implements AutoCloseable {
 		int read = 0, ic;
 		while (read < size) {
 			available((size - read) * INT_STRIDE);
-			ic = Math.min((ib - ia) / INT_STRIDE, size);
-			ArrayUtils.copyBigEndianInts(buf, ia, ints, 0, ic);
+			ic = Math.min((ib - ia) / INT_STRIDE, size - read);
+			ArrayUtils.copyBigEndianInts(buf, ia, ints, read, ic);
 			read += ic;
 			ia += ic * INT_STRIDE;
 			assert ia <= ib : "Overread";
@@ -157,8 +164,8 @@ public class NbtReader implements AutoCloseable {
 		int read = 0, ic;
 		while (read < size) {
 			available((size - read) * LONG_STRIDE);
-			ic = Math.min((ib - ia) / LONG_STRIDE, size);
-			ArrayUtils.copyBigEndianLongs(buf, ia, longs, 0, ic);
+			ic = Math.min((ib - ia) / LONG_STRIDE, size - read);
+			ArrayUtils.copyBigEndianLongs(buf, ia, longs, read, ic);
 			read += ic;
 			ia += ic * LONG_STRIDE;
 			assert ia <= ib : "Overread";

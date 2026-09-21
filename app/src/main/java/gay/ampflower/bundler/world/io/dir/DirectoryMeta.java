@@ -3,25 +3,34 @@ package gay.ampflower.bundler.world.io.dir;
 import gay.ampflower.bundler.utils.SizeUtils;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Ampflower
  * @since ${version}
  **/
-public final class DirectoryMeta {
-	public List<DirectoryData> list;
-	public long size;
-	public long dirs;
-	public long files;
-	public long error;
+public record DirectoryMeta<T extends PathData<?>>(
+	List<T> visited,
+	Map<String, List<T>> poi,
+	long size,
+	long dirs,
+	long files,
+	long error
+) {
+
+	public DirectoryMeta(List<T> visited, long size, long dirs, long files, long error) {
+		this(visited, Map.of(), size, dirs, files, error);
+	}
 
 	@Override
 	public String toString() {
 		return "DirectoryMeta{" +
-			"size=" + SizeUtils.displaySize(size) +
-			", dirs=" + dirs +
-			", files=" + files +
-			", error=" + error +
-			'}';
+				 "visited=" + visited +
+				 ", poi=" + poi +
+				 ", size=" + SizeUtils.displaySize(size) +
+				 ", dirs=" + dirs +
+				 ", files=" + files +
+				 ", error=" + error +
+				 '}';
 	}
 }

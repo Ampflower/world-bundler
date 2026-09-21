@@ -85,6 +85,12 @@ public final class ArrayUtils {
 		}
 	}
 
+	public static int[] copyBigEndianInts(byte[] from) {
+		final int[] to = new int[from.length >> 2];
+		copyBigEndianInts(from, to);
+		return to;
+	}
+
 	public static void copyBigEndianInts(byte[] from, int[] to) {
 		for (int i = 0; i < to.length; i++) {
 			to[i] = (int) INTS_BIG_ENDIAN.get(from, i << 2);

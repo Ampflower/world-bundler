@@ -8,11 +8,15 @@ import gay.ampflower.bundler.utils.SizeUtils;
 import gay.ampflower.bundler.utils.io.CountingOutputStream;
 import gay.ampflower.bundler.utils.io.ResettableByteArrayOutputStream;
 import gay.ampflower.bundler.utils.pos.Pos2i;
-import gay.ampflower.bundler.world.io.dir.DirectoryReader;
+import gay.ampflower.bundler.world.io.dir.Visitors;
 import gay.ampflower.bundler.world.region.BundlerHandler;
 import org.slf4j.Logger;
 
-import java.io.*;
+import java.io.FileDescriptor;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PushbackInputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,13 +33,13 @@ public class ArchiveWriter implements WorldWriter {
 
 	private final OutputStream stream;
 
-	ArchiveWriter(OutputStream stream) {
+	public ArchiveWriter(OutputStream stream) {
 		this.stream = stream;
 	}
 
 	public void run(Path regionIn) throws IOException {
-		final var meta = DirectoryReader.run(regionIn);
-		final var list = meta.list;
+		final var meta = Visitors.walkMinecraft(regionIn);
+		final var list = meta.visited();
 
 		try (final var fos = new FileOutputStream(FileDescriptor.out);
 			  final var cos = new CountingOutputStream(fos);
@@ -126,12 +130,12 @@ public class ArchiveWriter implements WorldWriter {
 			}
 
 			zos.finish();
-			logger.info("Written {} bytes", SizeUtils.displaySize(cos.getTransferred()));
+			logger.info("Written {} ({} bytes)", SizeUtils.displaySize(cos.getTransferred()), cos.getTransferred());
 		}
 	}
 
 	@Override
-	public void close() throws Exception {
+	public void close() throws IOException {
 		stream.close();
 	}
 }

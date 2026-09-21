@@ -79,7 +79,17 @@ public class McRegionHandler implements RegionHandler {
 	@Override
 	public Region readRegion(final int x, final int y, final InputStream stream, final ChunkReader chunkReader) throws IOException {
 		final var buf = new byte[SECTOR];
-		final var entries = readFirstSector(stream, buf);
+		final FirstSectorEntry[] entries;
+		{
+			final int read = stream.readNBytes(buf, 0, SECTOR);
+			if (read == 0) {
+				return null;
+			}
+			if (read != SECTOR) {
+				throw new IOException("EOF @ " + x + ", " + y + ": Only read " + read + " bytes, expected " + SECTOR + " bytes.");
+			}
+			entries = parseFirstSector(ArrayUtils.copyBigEndianInts(buf));
+		}
 		final int sectors, sectorOffset;
 
 		{
@@ -135,21 +145,25 @@ public class McRegionHandler implements RegionHandler {
 			logger.trace("{} @ {} with compressor {} ({}, {})", size, offset, Integer.toHexString(compressorId), compressorId, compressor);
 
 			if (compressor == null) {
-				logger.warn("Corrupted chunk [{},{}][{}]; Invalid compressor: {}, magic: {} ({})",
+				compressor = Compressor.getFileCompressor(Arrays.copyOfRange(bytes, 5, 69));
+
+				logger.warn("Corrupted chunk [{},{}][{}]; Invalid compressor: {}, magic: {} ({}); auto detected: {}",
 					x, y, i, compressorId & COMPRESSION_MASK_MIN,
 					ArrayUtils.hexString(bytes, offset, size, 32),
-					ArrayUtils.urlEncoded(bytes, offset, size, 32));
-				continue;
+					ArrayUtils.urlEncoded(bytes, offset, size, 32),
+					compressor
+				);
+				if (compressor != null) {
+					logger.warn("Reading through anyway, as we could detect a known compressor.");
+				} else {
+					continue;
+				}
 			}
 
 			chunks[i] = readChunk(x, y, i, size, compressorId, chunkReader, compressor, bytes, offset);
 		}
 
 		return new Region(x, y, toChunks(x, y, timestamps, chunks));
-	}
-
-	static FirstSectorEntry[] readFirstSector(final InputStream stream, final byte[] buf) throws IOException {
-		return parseFirstSector(IoUtils.readBigEndian(stream, buf));
 	}
 
 	static FirstSectorEntry[] parseFirstSector(final int[] offsets) {
@@ -223,13 +237,22 @@ public class McRegionHandler implements RegionHandler {
 
 		if (offset + 5 + size > bytes.length) {
 			logger.warn("Corrupted chunk [{},{}][{}]; overread: off: {}, len: {}, total: {}",
-				x, y, i, offset + 5, size, bytes.length);
+				x, y, i, offset + 5, size, bytes.length
+			);
 			return null;
 		}
 
 		chunk = compressor.inflate(bytes, offset + 5, size);
-		nbt = IoUtils.verifyNbt(chunk, i);
-		return new PotentialChunk(chunk, nbt);
+		try {
+			nbt = IoUtils.verifyNbt(chunk, i);
+			return new PotentialChunk(chunk, nbt);
+		} catch (AssertionError e) {
+			logger.warn("Corrupted chunk [{},{}][{}]: the NBT could not be read. {} bytes available.",
+				x, y, i, chunk.length, e
+			);
+			// FIXME: verbose data here
+			return null;
+		}
 	}
 
 	private static Chunk[] toChunks(int x, int y, int[] timestamps, PotentialChunk[] arrays) {
@@ -317,7 +340,7 @@ public class McRegionHandler implements RegionHandler {
 		for (int i = 0; i < Region.CHUNK_COUNT; i++) {
 			final var chunk = region.chunks()[i];
 			final int timestamp;
-			if (chunk != null && chunk.size() > 0) {
+			if (chunk != null && !chunk.isEmpty()) {
 				byte[] data = chunk.array();
 				IoUtils.verifyNbt(data, i);
 				deflater.setInput(data);

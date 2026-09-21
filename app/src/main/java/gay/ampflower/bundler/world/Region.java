@@ -125,7 +125,7 @@ public record Region(
 		int n = 0;
 		for (int i = 0; i < CHUNK_COUNT; i++) {
 			final var chunk = chunks[i];
-			if (chunk == null || chunk.size() == 0) {
+			if (chunk == null || chunk.isEmpty()) {
 				n++;
 			} else {
 				if (n > 0) {

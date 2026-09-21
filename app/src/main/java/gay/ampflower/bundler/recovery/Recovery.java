@@ -6,8 +6,7 @@ import gay.ampflower.bundler.world.Chunk;
 import gay.ampflower.bundler.world.Region;
 import gay.ampflower.bundler.world.RegionedChunkStorage;
 import gay.ampflower.bundler.world.io.ChunkReader;
-import gay.ampflower.bundler.world.io.dir.DirectoryMeta;
-import gay.ampflower.bundler.world.io.dir.DirectoryReader;
+import gay.ampflower.bundler.world.io.dir.Visitors;
 import gay.ampflower.bundler.world.io.resolvers.FileResolvers;
 import gay.ampflower.bundler.world.region.McRegionRecoveryHandler;
 import org.slf4j.Logger;
@@ -41,14 +40,14 @@ public final class Recovery {
 
 		logger.info("Discovering {}...", inputPath);
 
-		final DirectoryMeta meta = DirectoryReader.run(inputPath);
+		final var meta = Visitors.walkMinecraft(inputPath);
 
-		logger.info("Resolved {} directories with {} files.", meta.dirs, meta.files);
+		logger.info("Resolved {} directories with {} files.", meta.dirs(), meta.files());
 
 		final var exec = Executors.newWorkStealingPool(Runtime.getRuntime().availableProcessors());
 		final var regions = new ConcurrentLinkedQueue<Region>();
 
-		for (final var data : meta.list) {
+		for (final var data : meta.visited()) {
 			final var paths = data.paths;
 			exec.submit(() -> {
 				for (final var path : paths) {
@@ -106,7 +105,7 @@ public final class Recovery {
 							final Chunk[] chunks = primary.chunks().clone();
 
 							for (int i = 0; i < chunks.length; i++) {
-								if (chunks[i] == null || chunks[i].size() == 0) {
+								if (chunks[i] == null || chunks[i].isEmpty()) {
 									chunks[i] = secondary.chunks()[i];
 								}
 							}

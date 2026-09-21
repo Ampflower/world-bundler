@@ -24,11 +24,28 @@ public record Chunk(
 ) {
 
 	public Chunk(int x, int y, int timestamp, byte[] array) {
-		this(x, y, timestamp, array.length == 0 ? null : IoUtils.verifyNbt(array, Region.getChunkIndex(x, y)), array.length);
+		this(
+			x,
+			y,
+			timestamp,
+			array.length == 0 ? null : IoUtils.verifyNbt(array, Region.getChunkIndex(x, y)),
+			array.length
+		);
 	}
 
 	public Chunk(int rx, int ry, int i, int timestamp, byte[] array) {
 		this(Region.getChunkX(rx, i), Region.getChunkY(ry, i), timestamp, array);
+	}
+
+	public Chunk(Chunk previous, Nbt<?> nbt) {
+		this(
+			previous.x(),
+			previous.y(),
+			previous.timestamp(),
+			nbt,
+			// Doesn't apply as the NBT has changed
+			0
+		);
 	}
 
 	public Chunk pos(int x, int y) {
@@ -41,7 +58,7 @@ public record Chunk(
 			return ArrayUtils.SENTINEL_BYTES;
 		}
 
-		final var output = new ByteArrayOutputStream(size);
+		final var output = new ByteArrayOutputStream(Math.max(size, 1024));
 		try (final var writer = new NbtWriter(output)) {
 			writer.push(nbt);
 		}

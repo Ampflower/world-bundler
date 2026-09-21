@@ -28,6 +28,24 @@ public final class NbtCompound implements Nbt<Map<String, Nbt<?>>> {
 		return value != null && (type == null || value.getType() == type);
 	}
 
+	/**
+	 * Tests if the key is any number, integer or floating.
+	 *
+	 * @param key The string key in the compound
+	 * @return whether it is a number
+	 * @see #hasKey(String, NbtType)
+	 * @see NbtType#isNumber()
+	 */
+	public boolean hasNumber(String key) {
+		final var value = backing.get(key);
+		return value != null && (value.getType().isNumber());
+	}
+
+	public NbtType getType(String key) {
+		final var value = backing.get(key);
+		return value != null ? value.getType() : NbtType.Null;
+	}
+
 	public boolean getBoolean(String key) {
 		return get(key).asBoolean();
 	}

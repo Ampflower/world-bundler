@@ -21,6 +21,7 @@ lz4 = { module = "org.lz4:lz4-java", version.ref = "lz4" }
 # Utilties
 fastutil = { module = "it.unimi.dsi:fastutil", version.ref = "fastutil" }
 jopt = { module = "net.sf.jopt-simple:jopt-simple", version.ref = "jopt" }
+annotations = "org.jetbrains:annotations:26.0.2-1"
 
 # Logger
 logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
@@ -28,5 +29,5 @@ slf4j = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 
 [bundles]
 commons = ["commons_compress", "zstd", "lz4"]
-utils = ["fastutil", "jopt"]
+utils = ["fastutil", "jopt", "annotations"]
 logger = ["logback", "slf4j"]

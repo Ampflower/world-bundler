@@ -1,5 +1,7 @@
 package gay.ampflower.bundler.nbt;
 
+import gay.ampflower.bundler.utils.StringUtils;
+
 /**
  * @author Ampflower
  * @since ${version}
@@ -59,21 +61,12 @@ public record NbtString(String value) implements Nbt<String> {
 
 	@Override
 	public StringBuilder asStringifiedNbt(final StringBuilder builder) {
-		final int start = builder.length() + 1;
-		builder.append('"').append(value).append('"');
-		int end = builder.length() - 1;
-		for (int i = start; i < end; i++) {
-			if (builder.charAt(i) == '"') {
-				builder.insert(i, '\\');
-				i++;
-				end++;
-			}
-		}
+		StringUtils.quotedJsonEscapedString(builder, this.value);
 		return builder;
 	}
 
 	@Override
 	public String toString() {
-		return '"' + this.value + '"';
+		return this.asStringifiedNbt();
 	}
 }

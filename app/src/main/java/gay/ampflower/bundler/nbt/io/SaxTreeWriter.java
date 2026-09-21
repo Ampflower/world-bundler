@@ -1,11 +1,27 @@
 package gay.ampflower.bundler.nbt.io;
 
-import gay.ampflower.bundler.nbt.*;
+import gay.ampflower.bundler.nbt.Nbt;
+import gay.ampflower.bundler.nbt.NbtByte;
+import gay.ampflower.bundler.nbt.NbtByteArray;
+import gay.ampflower.bundler.nbt.NbtCompound;
+import gay.ampflower.bundler.nbt.NbtDouble;
+import gay.ampflower.bundler.nbt.NbtFloat;
+import gay.ampflower.bundler.nbt.NbtInt;
+import gay.ampflower.bundler.nbt.NbtIntArray;
+import gay.ampflower.bundler.nbt.NbtList;
+import gay.ampflower.bundler.nbt.NbtLong;
+import gay.ampflower.bundler.nbt.NbtLongArray;
+import gay.ampflower.bundler.nbt.NbtNull;
+import gay.ampflower.bundler.nbt.NbtShort;
+import gay.ampflower.bundler.nbt.NbtString;
+import gay.ampflower.bundler.nbt.NbtType;
 import gay.ampflower.bundler.utils.LogUtils;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Objects;
 
 /**
  * @author Ampflower
@@ -14,6 +30,8 @@ import java.util.Deque;
 public class SaxTreeWriter implements SaxNbtParser {
 	private static final Logger logger = LogUtils.logger();
 
+	// could be String, could be integer
+	private final Deque<Object> path = new ArrayDeque<>();
 	private final Deque<Nbt<?>> elements = new ArrayDeque<>();
 	private String field, rootName;
 	private Nbt<?> current, root;
@@ -43,7 +61,8 @@ public class SaxTreeWriter implements SaxNbtParser {
 
 	@Override
 	public void endTag() {
-		logger.trace("Called with {} elements @ {}", elements.size(), current, new Throwable());
+		final var name = this.path.poll();
+		logger.trace("Called with {} elements @ {}; name: {}", elements.size(), current, name, new Throwable());
 		this.current = elements.poll();
 	}
 
@@ -57,6 +76,7 @@ public class SaxTreeWriter implements SaxNbtParser {
 	}
 
 	private void pushLast(Nbt<?> tag) {
+		this.path.push(Objects.requireNonNullElse(field, ""));
 		final var last = this.current;
 		if (last != null) {
 			elements.push(last);
@@ -74,6 +94,7 @@ public class SaxTreeWriter implements SaxNbtParser {
 			if (!(value instanceof NbtCompound)) {
 				throw new AssertionError("got " + value + " at root");
 			}
+			this.path.push(field);
 			rootName = field;
 			root = current = value;
 			return;
@@ -129,5 +150,21 @@ public class SaxTreeWriter implements SaxNbtParser {
 	@Override
 	public void ofLongArray(final long[] value) {
 		push(new NbtLongArray(value));
+	}
+
+	public String getPath() {
+		// TODO: pathify the read values
+		//return elements.toString();
+		return this.path.toString();
+	}
+
+	@VisibleForTesting
+	public Nbt<?> getCurrent() {
+		return this.current;
+	}
+
+	@Override
+	public String toString() {
+		return this.field + " => " + this.current;
 	}
 }
