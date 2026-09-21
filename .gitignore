@@ -5,6 +5,7 @@ files.*
 *.linear
 *.zip*
 dump-*
+*.ini
 
 ### Debug ###
 hs_err*.log
