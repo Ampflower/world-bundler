@@ -21,12 +21,12 @@ import java.nio.file.StandardOpenOption;
 import java.util.List;
 
 public final class App {
-	private static final Logger logger = LogUtils.logger();
-
 	static {
 		// Ensure that anyone using stdout will be forced to use stderr.
 		System.setOut(System.err);
 	}
+
+	private static final Logger logger = LogUtils.logger();
 
 	public static void main(String[] args) throws IOException {
 
