@@ -1,16 +1,18 @@
 [versions]
 # Apache Commons
-commons_compress="1.23.0"
+commons_compress = "1.23.0"
 zstd = "1.5.5-3"
 lz4 = "1.8.0"
 
 # Utilites
-fastutil="8.5.12"
-jopt="5.0.4"
+fastutil = "8.5.12"
+jopt = "5.0.4"
+picocli = "4.7.7"
+sqlite3 = "3.53.4.0"
 
 # Logger
-slf4j="2.0.7"
-logback="1.4.6"
+slf4j = "2.0.7"
+logback = "1.4.6"
 
 [libraries]
 # Apache Commons
@@ -21,6 +23,10 @@ lz4 = { module = "org.lz4:lz4-java", version.ref = "lz4" }
 # Utilties
 fastutil = { module = "it.unimi.dsi:fastutil", version.ref = "fastutil" }
 jopt = { module = "net.sf.jopt-simple:jopt-simple", version.ref = "jopt" }
+picocli = { module = "info.picocli:picocli", version.ref = "picocli" }
+picocli-codegen = { module = "info.picocli:picocli-codegen", version.ref = "picocli" }
+sqlite3 = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite3" }
+
 annotations = "org.jetbrains:annotations:26.0.2-1"
 
 # Logger
@@ -29,5 +35,7 @@ slf4j = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 
 [bundles]
 commons = ["commons_compress", "zstd", "lz4"]
-utils = ["fastutil", "jopt", "annotations"]
+utils = ["fastutil", "jopt", "picocli", "sqlite3"]
+codegen = ["picocli-codegen"]
+compile = ["annotations"]
 logger = ["logback", "slf4j"]

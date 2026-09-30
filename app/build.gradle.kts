@@ -24,6 +24,11 @@ dependencies {
 	implementation(libs.bundles.commons)
 	implementation(libs.bundles.utils)
 	implementation(libs.bundles.logger)
+
+	implementation(libs.bundles.codegen)
+	annotationProcessor(libs.bundles.codegen)
+
+	compileOnly(libs.bundles.compile)
 }
 
 testing {
@@ -43,6 +48,12 @@ application {
 
 tasks {
 	withType<JavaCompile> {
-		options.compilerArgs.addAll(listOf("-Xlint:unchecked", "-Xlint:deprecation"))
+		options.compilerArgs.addAll(
+			listOf(
+				"-Xlint:unchecked",
+				"-Xlint:deprecation",
+				"-Aproject=${project.group}/${project.name}",
+			)
+		)
 	}
 }

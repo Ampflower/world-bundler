@@ -1,5 +1,6 @@
 package gay.ampflower.bundler;
 
+import gay.ampflower.bundler.command.OpaqueBlobScraper;
 import gay.ampflower.bundler.compress.Compressor;
 import gay.ampflower.bundler.compress.CompressorRegistry;
 import gay.ampflower.bundler.utils.Identifier;
@@ -13,6 +14,7 @@ import joptsimple.ValueConverter;
 import joptsimple.util.EnumConverter;
 import joptsimple.util.PathConverter;
 import org.slf4j.Logger;
+import picocli.CommandLine;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -20,6 +22,14 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 
+@CommandLine.Command(
+	name = "World Bundler",
+	version = "0.0.0",
+	description = "Bundles your worlds so you don't have to.",
+	subcommands = {
+		OpaqueBlobScraper.class,
+	}
+)
 public final class App {
 	static {
 		// Ensure that anyone using stdout will be forced to use stderr.
@@ -29,6 +39,12 @@ public final class App {
 	private static final Logger logger = LogUtils.logger();
 
 	public static void main(String[] args) throws IOException {
+		System.exit(new CommandLine(new App()).execute(args));
+
+
+		if (true) {
+			return;
+		}
 
 		final Path regionIn = Path.of(args[0]);
 		final Path regionOut = Path.of(args[1]);
