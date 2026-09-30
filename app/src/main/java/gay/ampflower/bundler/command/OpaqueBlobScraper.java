@@ -228,9 +228,9 @@ public final class OpaqueBlobScraper implements Callable<Integer> {
 		final PreparedStatement metadataUpdate = connection.prepareStatement(
 			"UPDATE meta SET lastSector = ?");
 		final PreparedStatement foundInsert = connection.prepareStatement(
-			"INSERT INTO found (position, sample) VALUES (?, ?)");
+			"INSERT OR IGNORE INTO found (position, sample) VALUES (?, ?)");
 		final PreparedStatement streamInsert = connection.prepareStatement(
-			"INSERT INTO streams (position, sector, offset, type) VALUES (?, ?, ?, ?)");
+			"INSERT OR IGNORE INTO streams (position, sector, offset, type) VALUES (?, ?, ?, ?)");
 
 		// TODO: retain a filesystem lock before establishing a database?
 		final byte[] raw = new byte[sectorSize];
@@ -274,15 +274,25 @@ public final class OpaqueBlobScraper implements Callable<Integer> {
 				) {
 					cinput.transferTo(output);
 				} catch (Throwable t) {
-					logger.debug("Swallowing, likely EOF", t);
+					logger.trace("Swallowing, likely EOF", t);
 				}
 
-				final byte[] bytes = output.toByteArray();
+				if (output.size() != 0) {
+					final byte[] bytes = output.toByteArray();
 
-				final String sample = new String(bytes, 0, Math.min(bytes.length, 64), StandardCharsets.UTF_8);
-				safeSample = URLEncoder.encode(sample, StandardCharsets.UTF_8);
+					final String sample = new String(bytes, 0, Math.min(bytes.length, 64), StandardCharsets.UTF_8);
+					safeSample = URLEncoder.encode(sample, StandardCharsets.UTF_8);
 
-				logger.debug("Captured {} bytes from sector {} ({}), sample: {}", output.size(), i, position, safeSample);
+					logger.debug(
+						"Captured {} bytes from sector {} ({}), sample: {}",
+						output.size(),
+						i,
+						position,
+						safeSample
+					);
+				} else {
+					safeSample = null;
+				}
 			}
 
 			// TODO: scour sector for rogue compressor headers
@@ -296,7 +306,7 @@ public final class OpaqueBlobScraper implements Callable<Integer> {
 				metadataUpdate.setLong(1, currentSector);
 				metadataUpdate.execute();
 
-				if (!compressor.isCompressor()) {
+				if (!compressor.isCompressor() || safeSample == null) {
 					return;
 				}
 
