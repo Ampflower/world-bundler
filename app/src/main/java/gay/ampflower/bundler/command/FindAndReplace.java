@@ -46,25 +46,11 @@ public final class FindAndReplace {
 
 	private static final Logger logger = LogUtils.logger();
 
-	public static void main(String[] args) throws IOException {
-		if (args.length < 3) {
-			logger.warn("Please pass: <input> <output> <conversion>");
-			System.exit(1);
-			return;
-		}
-
-		// We need the full normalized absolute path for what we want.
-		final Path inputPath = Path.of(args[0]).toAbsolutePath().normalize();
-		final Path outputPath = Path.of(args[1]).toAbsolutePath().normalize();
-
-		logger.debug("Resolving: {} => {}", inputPath, outputPath);
-
-		// Fixme: do specialisations
-		//  For now we're just going to send it on the header replacement.
-		//  To be fair if we wanted to be more correct, we'd reimplement the DFU,
-		//  but, who can do that in one night-
-		final Ini conversion = Ini.read(Path.of(args[2]), StandardCharsets.UTF_8);
-
+	public static void main(
+		final Path inputPath,
+		final Path outputPath,
+		final Ini conversion
+	) throws IOException {
 		logger.info("Discovering {}...", inputPath);
 
 		// TODO: this is insufficient for a copy & convert

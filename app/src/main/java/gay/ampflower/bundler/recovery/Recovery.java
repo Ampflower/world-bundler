@@ -28,6 +28,7 @@ import java.util.concurrent.locks.LockSupport;
 public final class Recovery {
 	private static final Logger logger = LogUtils.logger();
 
+	@Deprecated(forRemoval = true)
 	public static void main(String[] args) throws IOException {
 		if (args.length < 2) {
 			logger.warn("Please pass: <input> <output>");
@@ -35,9 +36,16 @@ public final class Recovery {
 			return;
 		}
 
-		final Path inputPath = Path.of(args[0]);
-		final Path outputPath = Path.of(args[1]);
+		System.exit(main(
+			Path.of(args[0]),
+			Path.of(args[1])
+		));
+	}
 
+	public static int main(
+		final Path inputPath,
+		final Path outputPath
+	) throws IOException {
 		logger.info("Discovering {}...", inputPath);
 
 		final var meta = Visitors.walkMinecraft(inputPath);
@@ -127,6 +135,8 @@ public final class Recovery {
 			poll(regions, output);
 		} while (!exec.isTerminated());
 		poll(regions, output);
+
+		return 0;
 	}
 
 	private static void poll(Queue<Region> regions, RecoveryLevelStorage output) throws IOException {

@@ -7,9 +7,6 @@ import gay.ampflower.bundler.utils.SizeUtils;
 import gay.ampflower.bundler.utils.SqlUtils;
 import gay.ampflower.bundler.utils.io.n.ChannelInputStream;
 import org.slf4j.Logger;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
-import picocli.CommandLine.Parameters;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -27,7 +24,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.concurrent.Callable;
 
 /**
  * Also known as PhotoRec at home
@@ -35,8 +31,7 @@ import java.util.concurrent.Callable;
  * @author Ampflower
  * @since ${version}
  **/
-@Command(name = "scan", description = "Scans given files for recoverable artifacts.")
-public final class OpaqueBlobScraper implements Callable<Integer> {
+public final class OpaqueBlobScraper {
 	private static final Logger logger = LogUtils.logger();
 
 	/*
@@ -54,26 +49,11 @@ public final class OpaqueBlobScraper implements Callable<Integer> {
 	 *    - ZFS
 	 */
 
-	@Option(names = "--sector-size", description = "The size of the sectors on disk. Defaults to 512.")
-	int sectorSize = 512;
-
-	@Option(
-		names = {"--output", "-o"},
-		description = "Where to write the files. Defaults to the current working directory."
-	)
-	Path output = Path.of(".");
-
-	@Parameters(
-		description = """
-			Files (including raw drives on UNIX-likes) to scrape for data.
-			"""
-	)
-	List<Path> files;
-
-	@Override
-	public Integer call() throws Exception {
-		output = output.toAbsolutePath().normalize();
-
+	public static int call(
+		final int scrapeSectorSize,
+		final Path output,
+		final List<Path> files
+	) throws Exception {
 		Files.createDirectories(output);
 
 		logger.info("Selected {} as the output path.", output);
@@ -101,7 +81,7 @@ public final class OpaqueBlobScraper implements Callable<Integer> {
 				// Retain a read-lock for the duration of the operation.
 				// This *should* ideally prevent any competing applications from interfering.
 				final var lock = channel.lock(0, Long.MAX_VALUE, true);
-				final Connection connection = bootstrapDatabase(this.output, fileName)
+				final Connection connection = bootstrapDatabase(output, fileName)
 			) {
 				final long witnessSize = channel.size();
 
@@ -118,7 +98,7 @@ public final class OpaqueBlobScraper implements Callable<Integer> {
 				) {
 					if (!results.next()) {
 						expectedSize = witnessSize;
-						sectorSize = this.sectorSize;
+						sectorSize = scrapeSectorSize;
 						sectorIndex = 0;
 
 						metadataInsert.setString(1, file.toString());
