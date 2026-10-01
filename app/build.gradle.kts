@@ -19,8 +19,6 @@ repositories {
 }
 
 dependencies {
-	// This dependency is used by the application.
-	implementation("com.google.guava:guava:31.1-jre")
 	implementation(libs.bundles.commons)
 	implementation(libs.bundles.utils)
 	implementation(libs.bundles.logger)

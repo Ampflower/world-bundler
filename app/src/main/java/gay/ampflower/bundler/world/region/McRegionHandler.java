@@ -12,9 +12,9 @@ import gay.ampflower.bundler.world.io.ChunkReader;
 import gay.ampflower.bundler.world.io.ChunkWriter;
 import gay.ampflower.bundler.world.io.RegionHandler;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import org.jetbrains.annotations.CheckReturnValue;
 import org.slf4j.Logger;
 
-import javax.annotation.CheckReturnValue;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;

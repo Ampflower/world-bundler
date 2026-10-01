@@ -8,9 +8,9 @@ import gay.ampflower.bundler.utils.ArrayUtils;
 import gay.ampflower.bundler.utils.LogUtils;
 import gay.ampflower.bundler.world.region.McRegionHandler;
 import org.apache.commons.compress.utils.CountingInputStream;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
-import javax.annotation.Nonnull;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -166,7 +166,14 @@ public final class IoUtils {
 		};
 	}
 
-	public static void writeSectors(OutputStream stream, @Nonnull byte[] read, int roff, @Nonnull byte[] buf, int woff, int len) throws IOException {
+	public static void writeSectors(
+		OutputStream stream,
+		@NotNull byte[] read,
+		int roff,
+		@NotNull byte[] buf,
+		int woff,
+		int len
+	) throws IOException {
 		int written = 0;
 
 		if (buf.length != Integer.highestOneBit(buf.length)) {

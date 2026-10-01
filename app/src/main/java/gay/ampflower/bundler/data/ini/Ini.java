@@ -7,11 +7,11 @@
 package gay.ampflower.bundler.data.ini;// Created 2022-14-07T06:56:10
 
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -104,7 +104,7 @@ public final class Ini {
 
 	public @Nullable String put(
 		final @Nullable String section,
-		final @Nonnull String key,
+		final @NotNull String key,
 		final @Nullable String value
 	) {
 		final var map = this.getOrCreateSection(section);
@@ -112,7 +112,7 @@ public final class Ini {
 		return map.put(key, value);
 	}
 
-	public @Nullable String get(final @Nullable String section, final @Nonnull String key) {
+	public @Nullable String get(final @Nullable String section, final @NotNull String key) {
 		final var map = this.getSection(section);
 
 		if (map == null) {

@@ -1,6 +1,7 @@
 package gay.ampflower.bundler.utils.io;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.EOFException;
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -48,19 +49,19 @@ public final class LimitedInputStream extends FilterInputStream {
 	}
 
 	@Override
-	public int read(@Nonnull final byte[] b) throws IOException {
+	public int read(@NotNull final byte[] b) throws IOException {
 		return read(b, 0, b.length);
 	}
 
 	@Override
-	public int read(@Nonnull final byte[] b, final int off, final int len) throws IOException {
-		if(remaining == 0) {
+	public int read(@NotNull final byte[] b, final int off, final int len) throws IOException {
+		if (remaining == 0) {
 			return -1;
 		}
 		check();
 
 		int ret = super.read(b, off, Math.min(len, remaining));
-		if(ret > 0) {
+		if (ret > 0) {
 			REMAINING.getAndAdd(this, -ret);
 		}
 		return ret;

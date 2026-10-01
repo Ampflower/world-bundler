@@ -14,10 +14,10 @@ import gay.ampflower.bundler.world.io.ChunkReader;
 import gay.ampflower.bundler.world.io.RegionHandler;
 import gay.ampflower.bundler.world.util.ChunkDataUtil;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -227,8 +227,10 @@ public final class McRegionRecoveryHandler extends McRegionHandler implements Re
 	}
 
 	@Nullable
-	private static PotentialChunk tryInflate(final @Nonnull byte[] buffer, final int offset, final int expectedSize,
-														  final @Nullable Compressor compressor) {
+	private static PotentialChunk tryInflate(
+		final @NotNull byte[] buffer, final int offset, final int expectedSize,
+		final @Nullable Compressor compressor
+	) {
 		if (compressor == null) {
 			return null;
 		}
