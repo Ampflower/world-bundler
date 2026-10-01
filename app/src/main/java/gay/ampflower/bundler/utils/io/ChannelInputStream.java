@@ -1,4 +1,4 @@
-package gay.ampflower.bundler.utils.io.n;
+package gay.ampflower.bundler.utils.io;
 
 import gay.ampflower.bundler.utils.Mint;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;

@@ -5,7 +5,7 @@ import gay.ampflower.bundler.compress.CompressorRegistry;
 import gay.ampflower.bundler.utils.LogUtils;
 import gay.ampflower.bundler.utils.SizeUtils;
 import gay.ampflower.bundler.utils.SqlUtils;
-import gay.ampflower.bundler.utils.io.n.ChannelInputStream;
+import gay.ampflower.bundler.utils.io.ChannelInputStream;
 import org.slf4j.Logger;
 
 import java.io.ByteArrayOutputStream;
