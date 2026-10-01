@@ -15,6 +15,7 @@ import gay.ampflower.bundler.nbt.io.SaxNbtParser;
 import gay.ampflower.bundler.nbt.io.SaxNbtReader;
 import gay.ampflower.bundler.nbt.io.SaxTreeWriter;
 import gay.ampflower.bundler.utils.LogUtils;
+import gay.ampflower.bundler.utils.SysProps;
 import gay.ampflower.bundler.utils.pos.Pos2i;
 import gay.ampflower.bundler.world.Chunk;
 import gay.ampflower.bundler.world.Region;
@@ -42,7 +43,7 @@ import java.util.concurrent.Executors;
  * @since ${version}
  **/
 public final class FindAndReplace {
-	private static final boolean debug = Boolean.getBoolean("worldbunder.debug") || FindAndReplace.class.desiredAssertionStatus();
+	private static final boolean debug = SysProps.isDebuggee();
 
 	private static final Logger logger = LogUtils.logger();
 
