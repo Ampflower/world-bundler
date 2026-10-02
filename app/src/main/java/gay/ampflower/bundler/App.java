@@ -1,14 +1,18 @@
 package gay.ampflower.bundler;
 
+import com.j256.simplemagic.ContentInfo;
 import gay.ampflower.bundler.command.FindAndReplace;
 import gay.ampflower.bundler.command.OpaqueBlobScraper;
 import gay.ampflower.bundler.compress.Compressor;
 import gay.ampflower.bundler.compress.CompressorRegistry;
 import gay.ampflower.bundler.data.ini.Ini;
 import gay.ampflower.bundler.recovery.Recovery;
+import gay.ampflower.bundler.utils.EncodedStringMap;
 import gay.ampflower.bundler.utils.Identifier;
 import gay.ampflower.bundler.utils.LevelConverter;
 import gay.ampflower.bundler.utils.LogUtils;
+import gay.ampflower.bundler.utils.MagicUtils;
+import gay.ampflower.bundler.utils.SizeUtils;
 import gay.ampflower.bundler.world.Region;
 import gay.ampflower.bundler.world.region.LinearHandler;
 import gay.ampflower.bundler.world.region.McRegionHandler;
@@ -24,7 +28,11 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ScopeType;
 
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -52,7 +60,7 @@ public final class App {
 
 	@Option(
 		// Covers all the potential edgecases
-		names = {"--help", "-help", "-h", "-?", "/?"},
+		names = {"--help", "-Help", "-h", "-?", "/?"},
 		usageHelp = true,
 		description = "Displays this help message.",
 		scope = ScopeType.INHERIT
@@ -60,7 +68,11 @@ public final class App {
 	private boolean helpRequested;
 
 	public static void main(String[] args) throws IOException {
-		System.exit(new CommandLine(new App()).execute(args));
+		final var cli = new CommandLine(new App());
+
+		cli.registerConverter(Charset.class, Charset::forName);
+
+		System.exit(cli.execute(args));
 
 		if (true) {
 			return;
@@ -192,7 +204,7 @@ public final class App {
 	@Command(description = "Scans given files for recoverable artifacts. Essentially PhotoRec at home.")
 	public int scan(
 		@Option(
-			names = "--sector-size",
+			names = {"--sector-size", "-s", "/S"},
 			paramLabel = "<size>",
 			description = "The size of the sectors on disk.",
 			showDefaultValue = Help.Visibility.ALWAYS,
@@ -200,7 +212,28 @@ public final class App {
 		) final int sectorSize,
 
 		@Option(
-			names = {"--output", "-o"},
+			names = {"--find", "-f", "/F"},
+			paramLabel = "<string>",
+			description = "What strings to find within the given files. May be repeated for multiple search strings. Will increase the time required to complete."
+		) final List<String> find,
+
+		@Option(
+			names = {"--charset", "-c", "/C"},
+			paramLabel = "<charset>",
+			description = "What charsets to scan with? May increase the time required to complete.",
+			showDefaultValue = Help.Visibility.ALWAYS,
+			defaultValue = "UTF-8"
+		) final List<Charset> charsets,
+
+		@Option(
+			names = {"--paranoia", "-p", "/P"},
+			description = "Whether to try scrape every byte offset for data. Will increase the time required to complete.",
+			defaultValue = "false",
+			negatable = true
+		) final boolean paranoia,
+
+		@Option(
+			names = {"--output", "-o", "/O"},
 			paramLabel = "<directory>",
 			description = "Where to write the files.",
 			showDefaultValue = Help.Visibility.ALWAYS,
@@ -215,8 +248,54 @@ public final class App {
 	) throws Exception {
 		return OpaqueBlobScraper.call(
 			sectorSize,
+			find.isEmpty() ? EncodedStringMap.NONE : new EncodedStringMap(charsets, find),
+			paranoia,
 			output.toAbsolutePath().normalize(),
 			files
 		);
+	}
+
+	// Test
+	@Command(description = "Gives information as to what the file is.")
+	public int file(
+		@Parameters(
+			paramLabel = "<path>",
+			index = "0",
+			description = "The path to test.",
+			arity = "0..1" // can be omitted
+		) final Path path
+	) throws IOException {
+		final InputStream stream;
+		if (path == null) {
+			stream = new FileInputStream(FileDescriptor.in);
+		} else {
+			if (!Files.isRegularFile(path)) {
+				logger.warn("Not a regular file: {}", path);
+				return 1;
+			}
+
+			stream = Files.newInputStream(path);
+		}
+
+		try (stream) {
+			final byte[] bytes = stream.readNBytes(32 * (int) SizeUtils.KiB);
+
+			final ContentInfo info = MagicUtils.test(bytes);
+
+			if (info == null) {
+				logger.warn("Could not detect file from {} bytes", bytes.length);
+				return 2;
+			}
+
+			logger.info(
+				"{}\nContent Type: {}\nName: {}\nMIME: {}",
+				info.getMessage(),
+				info.getContentType(),
+				info.getName(),
+				info.getMimeType()
+			);
+		}
+
+		return 0;
 	}
 }

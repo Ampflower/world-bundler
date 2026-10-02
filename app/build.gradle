@@ -1,0 +1,38 @@
+plugins {
+	// Apply the application plugin to add support for building a CLI application in Java.
+	id("application")
+	id("com.github.johnrengelman.shadow") version "8.1.1"
+}
+
+repositories {
+	// Use Maven Central for resolving dependencies.
+	mavenCentral()
+}
+
+dependencies {
+	implementation(libs.bundles.commons)
+	implementation(libs.bundles.utils)
+	implementation(libs.bundles.logger)
+
+	implementation(libs.bundles.codegen)
+	annotationProcessor(libs.bundles.codegen)
+
+	compileOnly(libs.bundles.compile)
+}
+
+application {
+	// Define the main class for the application.
+	mainClass.set("gay.ampflower.bundler.App")
+}
+
+test {
+	useTestNG()
+}
+
+tasks.withType JavaCompile, {
+	options.compilerArgs += [
+		"-Xlint:unchecked",
+		"-Xlint:deprecation",
+		"-Aproject=${project.group}/${project.name}",
+	]
+}

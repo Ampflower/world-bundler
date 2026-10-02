@@ -14,6 +14,8 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Ampflower
@@ -21,6 +23,29 @@ import java.io.OutputStream;
  **/
 public final class CompressorRegistry {
 	private static final Logger logger = LogUtils.logger();
+
+	private static final Map<String, Compressor> mimeToCompressor = new HashMap<>();
+	private static final Map<Compressor, String> compressorToMime = new HashMap<>();
+
+	public static void addCompressorMime(final String string, final Compressor compressor) {
+		mimeToCompressor.put(string, compressor);
+		compressorToMime.put(compressor, string);
+	}
+
+	public static String getCompressorMime(final Compressor compressor) {
+		return compressorToMime.get(compressor);
+	}
+
+	public static Compressor getCompressorByMime(final String mime) {
+		return mimeToCompressor.getOrDefault(mime, NoneCompressor.INSTANCE);
+	}
+
+	static {
+		addCompressorMime("application/gzip", GZipCompressor.INSTANCE);
+		addCompressorMime("application/zlib", ZlibCompressor.INSTANCE);
+		addCompressorMime("application/zstd", ZstdCompressor.INSTANCE);
+		addCompressorMime("application/octet-stream", NoneCompressor.INSTANCE);
+	}
 
 	public static final CompressorRegistry vanilla = new CompressorRegistry();
 	final Int2ReferenceMap<Compressor> mcRegionCompressors = new Int2ReferenceOpenHashMap<>();

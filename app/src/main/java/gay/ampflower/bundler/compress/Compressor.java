@@ -1,6 +1,14 @@
 package gay.ampflower.bundler.compress;
 
-import java.io.*;
+import gay.ampflower.bundler.utils.io.IoUtils;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PushbackInputStream;
+import java.util.Optional;
 
 /**
  * @author Ampflower
@@ -46,6 +54,14 @@ public interface Compressor {
 
 	static Compressor getMcRegionCompressor(int compressor) {
 		return CompressorRegistry.vanilla.getMcRegion(compressor);
+	}
+
+	static Optional<Compressor> getFileCompressor(InputStream stream) throws IOException {
+		final byte[] buf = IoUtils.markRead(stream, 8);
+		if (buf == null) {
+			return Optional.empty();
+		}
+		return Optional.of(getFileCompressor(buf));
 	}
 
 	static Compressor getFileCompressor(PushbackInputStream stream) throws IOException {

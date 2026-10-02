@@ -1,5 +1,7 @@
 package gay.ampflower.bundler.utils;
 
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.net.URLEncoder;
@@ -22,7 +24,10 @@ public final class ArrayUtils {
 	public static final VarHandle FLOATS_BIG_ENDIAN = MethodHandles.byteArrayViewVarHandle(float[].class, ByteOrder.BIG_ENDIAN);
 	public static final VarHandle DOUBLES_BIG_ENDIAN = MethodHandles.byteArrayViewVarHandle(double[].class, ByteOrder.BIG_ENDIAN);
 
-	public static final VarHandle INTS_LITTLE_ENDIAN = MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.LITTLE_ENDIAN);
+	public static final VarHandle INTS_LITTLE_ENDIAN = MethodHandles.byteArrayViewVarHandle(
+		int[].class,
+		ByteOrder.LITTLE_ENDIAN
+	);
 
 	public static final int BYTE_STRIDE = Byte.BYTES;
 	public static final int SHORT_STRIDE = Short.BYTES;
@@ -32,6 +37,35 @@ public final class ArrayUtils {
 	public static final int DOUBLE_STRIDE = Double.BYTES;
 
 	public static final byte[] SENTINEL_BYTES = new byte[0];
+	public static final short[] SENTINEL_SHORTS = new short[0];
+	public static final int[] SENTINEL_INTS = new int[0];
+	public static final long[] SENTINEL_LONGS = new long[0];
+	public static final float[] SENTINEL_FLOATS = new float[0];
+	public static final double[] SENTINEL_DOUBLES = new double[0];
+
+	public static byte[] sizedBytes(int length) {
+		return length > 0 ? new byte[length] : SENTINEL_BYTES;
+	}
+
+	public static short[] sizedShorts(int length) {
+		return length > 0 ? new short[length] : SENTINEL_SHORTS;
+	}
+
+	public static int[] sizedInts(int length) {
+		return length > 0 ? new int[length] : SENTINEL_INTS;
+	}
+
+	public static long[] sizedLongs(int length) {
+		return length > 0 ? new long[length] : SENTINEL_LONGS;
+	}
+
+	public static float[] sizedFloats(int length) {
+		return length > 0 ? new float[length] : SENTINEL_FLOATS;
+	}
+
+	public static double[] sizedDouble(int length) {
+		return length > 0 ? new double[length] : SENTINEL_DOUBLES;
+	}
 
 	public static <T> T[] sortedCopyOfRange(T[] input, int from, int to, Comparator<T> comparator) {
 		final var array = Arrays.copyOfRange(input, from, to);
@@ -251,6 +285,42 @@ public final class ArrayUtils {
 			return def;
 		}
 		return function.applyAsInt(object);
+	}
+
+	public static long readLong(final MemorySegment memory, final long position, final ByteOrder order) {
+		return readLong(memory, position, ValueLayout.JAVA_LONG_UNALIGNED.withOrder(order));
+	}
+
+	public static long readLong(final MemorySegment memory, final long position, final ValueLayout.OfLong layout) {
+		return readLong(
+			memory,
+			position,
+			MethodHandles.byteArrayViewVarHandle(long[].class, layout.order()),
+			layout.varHandle()
+		);
+	}
+
+	public static long readLong(
+		final MemorySegment memory,
+		final long position,
+		final VarHandle array,
+		final VarHandle segment
+	) {
+		final long len = memory.byteSize() - position;
+		if (len > 8) {
+			return (long) segment.get(memory, position);
+		}
+		final byte[] sample = new byte[8];
+		MemorySegment.copy(memory, ValueLayout.JAVA_BYTE, position, sample, 0, (int) len);
+		return (long) array.get(sample, 0);
+	}
+
+	public static long readLong(final byte[] bytes, final int position, final VarHandle array) {
+		final int len = bytes.length - position;
+		if (len > 8) {
+			return (long) array.get(bytes, position);
+		}
+		return (long) array.get(Arrays.copyOfRange(bytes, position, position + 8), position);
 	}
 
 	public static String toString(Object array) {

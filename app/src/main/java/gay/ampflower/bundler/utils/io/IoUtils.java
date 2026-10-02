@@ -6,16 +6,25 @@ import gay.ampflower.bundler.nbt.io.SaxNbtReader;
 import gay.ampflower.bundler.nbt.io.SaxTreeWriter;
 import gay.ampflower.bundler.utils.ArrayUtils;
 import gay.ampflower.bundler.utils.LogUtils;
+import gay.ampflower.bundler.utils.Mint;
 import gay.ampflower.bundler.world.region.McRegionHandler;
 import org.apache.commons.compress.utils.CountingInputStream;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PushbackInputStream;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.util.Arrays;
 import java.util.function.Consumer;
 
@@ -219,6 +228,171 @@ public final class IoUtils {
 		final var output = new int[buf.length >> 2];
 		ArrayUtils.copyBigEndianInts(buf, output);
 		return output;
+	}
+
+	public static boolean markSupported(final InputStream stream, int length) {
+		if (!stream.markSupported()) {
+			// We cannot return a buffer.
+			return false;
+		}
+
+		// Non-compliance test.
+		// In theory, a stream that fails this would have not advanced.
+		try {
+			stream.mark(length);
+			stream.reset();
+		} catch (IOException ignored) {
+			return false;
+		}
+
+		return true;
+	}
+
+	public static byte @Nullable [] markRead(final InputStream stream, int length) throws IOException {
+		if (!markSupported(stream, length)) {
+			return null;
+		}
+
+		stream.mark(length);
+		final var array = stream.readNBytes(length);
+		// At this point, the stream has been altered.
+		stream.reset();
+
+		return array;
+	}
+
+	public static int markRead(
+		final InputStream stream,
+		final byte[] buf,
+		final int offset,
+		final int length
+	) throws IOException {
+		if (!markSupported(stream, length)) {
+			return 0;
+		}
+
+		stream.mark(length);
+		final int read = stream.readNBytes(buf, offset, length);
+		// At this point, the stream has been altered.
+		stream.reset();
+
+		return read;
+	}
+
+	public static byte[] markRead(final PushbackInputStream stream, int length) throws IOException {
+		final byte[] buf = stream.readNBytes(length);
+		stream.unread(buf);
+		return buf;
+	}
+
+	public static int markRead(
+		final PushbackInputStream stream,
+		final byte[] buf,
+		final int offset,
+		final int length
+	) throws IOException {
+		final int read = stream.readNBytes(buf, offset, length);
+		stream.unread(buf, offset, read);
+		return read;
+	}
+
+	public static int adjustSize(
+		final SeekableByteChannel channel,
+		final long offset,
+		final int length
+	) throws IOException {
+		if (!channel.isOpen()) {
+			return 0;
+		}
+
+		final long size = channel.size();
+
+		final long available = size - offset;
+
+		if (available <= 0) {
+			return 0;
+		}
+
+		if (available < (long) length) {
+			return (int) available;
+		}
+
+		return length;
+	}
+
+	public static byte[] sizedBuffer(
+		final SeekableByteChannel channel,
+		final long offset,
+		final int length
+	) throws IOException {
+		return ArrayUtils.sizedBytes(adjustSize(channel, offset, length));
+	}
+
+	public static byte[] markRead(final SeekableByteChannel channel, final int length) throws IOException {
+		return markRead(channel, channel.position(), length);
+	}
+
+	public static byte[] markRead(final SeekableByteChannel channel, final long offset, int length) throws IOException {
+		final byte[] buf = sizedBuffer(channel, offset, length);
+
+		if (buf.length == 0) {
+			return buf;
+		}
+
+		final long previous = channel.position();
+		channel.position(offset);
+
+		final int read = readN(channel, ByteBuffer.wrap(buf));
+
+		channel.position(previous);
+
+		return read != buf.length ? Arrays.copyOf(buf, read) : buf;
+	}
+
+	public static int readN(final ReadableByteChannel channel, final ByteBuffer buf) throws IOException {
+		int total = 0;
+		int read;
+		while (buf.remaining() > 0 && (read = channel.read(buf)) > 0) {
+			total += read;
+		}
+		return total;
+	}
+
+	public static byte[] markRead(final FileChannel channel, int length) throws IOException {
+		return markRead(channel, channel.position(), length);
+	}
+
+	public static byte[] markRead(final FileChannel channel, final long offset, int length) throws IOException {
+		final byte[] buf = sizedBuffer(channel, offset, length);
+
+		if (buf.length == 0) {
+			return buf;
+		}
+
+		final int read = readN(channel, ByteBuffer.wrap(buf), offset);
+		return read != buf.length ? Arrays.copyOf(buf, read) : buf;
+	}
+
+	public static int readN(final FileChannel channel, final ByteBuffer buf, long offset) throws IOException {
+		int total = 0;
+		int read;
+		while (buf.remaining() > 0 && (read = channel.read(buf, offset)) > 0) {
+			offset += read;
+			total += read;
+		}
+		return total;
+	}
+
+	public static byte[] markRead(final MemorySegment segment, final long offset, int length) {
+		final byte[] buf = ArrayUtils.sizedBytes(Math.min(length, Mint.clampAsInt(segment.byteSize() - offset)));
+
+		if (buf.length == 0) {
+			return buf;
+		}
+
+		MemorySegment.copy(segment, ValueLayout.JAVA_BYTE, offset, buf, 0, buf.length);
+
+		return buf;
 	}
 
 	public static NbtCompound verifyNbt(byte[] nbt, int chunk) {
