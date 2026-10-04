@@ -17,12 +17,54 @@ import java.util.function.ToIntFunction;
  * @since ${version}
  **/
 public final class ArrayUtils {
-	public static final VarHandle SHORTS_BIG_ENDIAN = MethodHandles.byteArrayViewVarHandle(short[].class, ByteOrder.BIG_ENDIAN);
-	public static final VarHandle CHARS_BIG_ENDIAN = MethodHandles.byteArrayViewVarHandle(char[].class, ByteOrder.BIG_ENDIAN);
-	public static final VarHandle INTS_BIG_ENDIAN = MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.BIG_ENDIAN);
-	public static final VarHandle LONGS_BIG_ENDIAN = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.BIG_ENDIAN);
-	public static final VarHandle FLOATS_BIG_ENDIAN = MethodHandles.byteArrayViewVarHandle(float[].class, ByteOrder.BIG_ENDIAN);
-	public static final VarHandle DOUBLES_BIG_ENDIAN = MethodHandles.byteArrayViewVarHandle(double[].class, ByteOrder.BIG_ENDIAN);
+	public static final VarHandle SHORTS_BIG_ENDIAN = MethodHandles.byteArrayViewVarHandle(
+		short[].class,
+		ByteOrder.BIG_ENDIAN
+	);
+	public static final VarHandle CHARS_BIG_ENDIAN = MethodHandles.byteArrayViewVarHandle(
+		char[].class,
+		ByteOrder.BIG_ENDIAN
+	);
+	public static final VarHandle INTS_BIG_ENDIAN = MethodHandles.byteArrayViewVarHandle(
+		int[].class,
+		ByteOrder.BIG_ENDIAN
+	);
+	public static final VarHandle LONGS_BIG_ENDIAN = MethodHandles.byteArrayViewVarHandle(
+		long[].class,
+		ByteOrder.BIG_ENDIAN
+	);
+	public static final VarHandle FLOATS_BIG_ENDIAN = MethodHandles.byteArrayViewVarHandle(
+		float[].class,
+		ByteOrder.BIG_ENDIAN
+	);
+	public static final VarHandle DOUBLES_BIG_ENDIAN = MethodHandles.byteArrayViewVarHandle(
+		double[].class,
+		ByteOrder.BIG_ENDIAN
+	);
+
+	private static VarHandle bigEndian(ValueLayout layout) {
+		return layout.withOrder(ByteOrder.BIG_ENDIAN).varHandle();
+	}
+
+	private static VarHandle littleEndian(ValueLayout layout) {
+		return layout.withOrder(ByteOrder.LITTLE_ENDIAN).varHandle();
+	}
+
+	public static final VarHandle BYTES = ValueLayout.JAVA_BYTE.varHandle();
+
+	public static final VarHandle SHORTS_UNALIGNED_BIG_ENDIAN = bigEndian(ValueLayout.JAVA_SHORT_UNALIGNED);
+	public static final VarHandle CHARS_UNALIGNED_BIG_ENDIAN = bigEndian(ValueLayout.JAVA_CHAR_UNALIGNED);
+	public static final VarHandle INTS_UNALIGNED_BIG_ENDIAN = bigEndian(ValueLayout.JAVA_INT_UNALIGNED);
+	public static final VarHandle LONGS_UNALIGNED_BIG_ENDIAN = bigEndian(ValueLayout.JAVA_LONG_UNALIGNED);
+	public static final VarHandle FLOATS_UNALIGNED_BIG_ENDIAN = bigEndian(ValueLayout.JAVA_FLOAT_UNALIGNED);
+	public static final VarHandle DOUBLES_UNALIGNED_BIG_ENDIAN = bigEndian(ValueLayout.JAVA_DOUBLE_UNALIGNED);
+
+	public static final VarHandle SHORTS_UNALIGNED_LITTLE_ENDIAN = littleEndian(ValueLayout.JAVA_SHORT_UNALIGNED);
+	public static final VarHandle CHARS_UNALIGNED_LITTLE_ENDIAN = littleEndian(ValueLayout.JAVA_CHAR_UNALIGNED);
+	public static final VarHandle INTS_UNALIGNED_LITTLE_ENDIAN = littleEndian(ValueLayout.JAVA_INT_UNALIGNED);
+	public static final VarHandle LONGS_UNALIGNED_LITTLE_ENDIAN = littleEndian(ValueLayout.JAVA_LONG_UNALIGNED);
+	public static final VarHandle FLOATS_UNALIGNED_LITTLE_ENDIAN = littleEndian(ValueLayout.JAVA_FLOAT_UNALIGNED);
+	public static final VarHandle DOUBLES_UNALIGNED_LITTLE_ENDIAN = littleEndian(ValueLayout.JAVA_DOUBLE_UNALIGNED);
 
 	public static final VarHandle INTS_LITTLE_ENDIAN = MethodHandles.byteArrayViewVarHandle(
 		int[].class,
@@ -320,7 +362,39 @@ public final class ArrayUtils {
 		if (len > 8) {
 			return (long) array.get(bytes, position);
 		}
-		return (long) array.get(Arrays.copyOfRange(bytes, position, position + 8), position);
+		return (long) array.get(Arrays.copyOfRange(bytes, position, position + 8), 0);
+	}
+
+	public static int hashCode(final MemorySegment memory) {
+		return hashCode(memory, 0L, memory.byteSize());
+	}
+
+	public static int hashCode(final MemorySegment memory, final long position, final long length) {
+		final long limit = Math.addExact(position, length);
+		if (limit > memory.byteSize()) {
+			throw new ArrayIndexOutOfBoundsException();
+		}
+		int hash = 0;
+		for (long i = position; i < limit; i++) {
+			hash = hash * 31 + (byte) BYTES.get(memory, i);
+		}
+		return hash;
+	}
+
+	public static int hashCode(final byte[] bytes) {
+		return hashCode(bytes, 0, bytes.length);
+	}
+
+	public static int hashCode(final byte[] bytes, final int position, final int length) {
+		final int limit = Math.addExact(position, length);
+		if (limit > bytes.length) {
+			throw new ArrayIndexOutOfBoundsException();
+		}
+		int hash = 0;
+		for (int i = position; i < limit; i++) {
+			hash = hash * 31 + bytes[i];
+		}
+		return hash;
 	}
 
 	public static String toString(Object array) {

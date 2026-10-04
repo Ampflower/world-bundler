@@ -1,11 +1,14 @@
 package gay.ampflower.bundler.utils;
 
+import it.unimi.dsi.fastutil.bytes.ByteArrays;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenCustomHashMap;
 import org.jetbrains.annotations.CheckReturnValue;
 import org.jetbrains.annotations.NotNullByDefault;
 import org.jetbrains.annotations.Nullable;
@@ -23,9 +26,13 @@ import java.nio.charset.CoderMalfunctionError;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Formatter;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.IntUnaryOperator;
 import java.util.function.Predicate;
 
@@ -36,6 +43,7 @@ import java.util.function.Predicate;
 @NotNullByDefault
 public final class EncodedStringMap {
 	private static final Logger logger = LogUtils.logger();
+	private static final boolean debug = SysProps.isDebuggee();
 
 	private static final VarHandle arrayHandle = MethodHandles.byteArrayViewVarHandle(
 		long[].class,
@@ -77,20 +85,12 @@ public final class EncodedStringMap {
 	}
 
 	public EncodedStringMap(
-		final Collection<Charset> charsets,
+		final @Nullable Collection<Charset> charsets,
 		final Collection<String> unprocessedStrings
 	) {
-		final List<Charset> encoders = new ArrayList<>();
+		final List<Charset> encoders = StringUtils.encoders(charsets);
 		final Set<String> strings = new HashSet<>();
 		int max = 0, min = Integer.MAX_VALUE;
-
-		for (final var charset : charsets) {
-			if (!charset.canEncode()) {
-				logger.warn("{} cannot encode text", charset);
-				continue;
-			}
-			encoders.add(charset);
-		}
 
 		for (final var value : unprocessedStrings) {
 			if (value.isEmpty()) {
@@ -100,7 +100,7 @@ public final class EncodedStringMap {
 			strings.add(value.intern());
 		}
 
-		final var work = new Long2ObjectOpenHashMap<Int2ObjectMap<List<Result0>>>();
+		final var work = new Long2ObjectOpenHashMap<Int2ObjectMap<Object2ObjectMap<byte[], Result0>>>();
 
 		final var bytes = new byte[Math.multiplyExact(max, 8)];
 		final var bytebuf = ByteBuffer.wrap(bytes);
@@ -136,12 +136,14 @@ public final class EncodedStringMap {
 
 					final long index = bytebuf.getLong(0);
 
-					work.computeIfAbsent(index, $ -> new Int2ObjectOpenHashMap<>())
-						.computeIfAbsent(length, $ -> new ArrayList<>())
-						// TODO: known fast stable hash algorithm
-						.add(new Result0(value, charset, array, Arrays.hashCode(array)));
+					final var result0 = work.computeIfAbsent(index, $ -> new Int2ObjectOpenHashMap<>())
+						.computeIfAbsent(length, $ -> new Object2ObjectOpenCustomHashMap<>(ByteArrays.HASH_STRATEGY))
+						.compute(array, new Compute(value, charset));
 
-					encoded++;
+					if (result0.charset() == charset) {
+						logger.trace("Mapped `{}` encoded with {} to {}", value, charset, Long.toHexString(index));
+						encoded++;
+					}
 				} catch (CoderMalfunctionError e) {
 					logger.warn("{} could not encode {}, skipping.", charset, value, e);
 				} finally {
@@ -157,7 +159,7 @@ public final class EncodedStringMap {
 			return;
 		}
 
-		logger.debug("Encoded {} strings with {} charsets {} times.", strings.size(), encoders.size(), encoded);
+		logger.debug("Encoded {} strings with {} charsets. {} matches total.", strings.size(), encoders.size(), encoded);
 
 		final var backing = new Long2ObjectOpenHashMap<Bucket>();
 
@@ -167,7 +169,7 @@ public final class EncodedStringMap {
 			backing.put(entry.getLongKey(), Bucket.of(entry.getValue()));
 		}
 
-		this.backing = Long2ObjectMaps.unmodifiable(backing);
+		this.backing = backing;
 		this.minLength = min;
 	}
 
@@ -193,14 +195,7 @@ public final class EncodedStringMap {
 		return this.lookup(
 			ArrayUtils.readLong(bytes, offset, arrayHandle),
 			length,
-			len -> {
-				int hash = 0;
-				len += offset;
-				for (int i = offset; i < len; i++) {
-					hash = hash * 31 + bytes[i];
-				}
-				return hash;
-			},
+			len -> ArrayUtils.hashCode(bytes, offset, len),
 			result -> Arrays.equals(result.encoded, 0, result.length(), bytes, offset, offset + result.length())
 		);
 	}
@@ -218,14 +213,7 @@ public final class EncodedStringMap {
 		return lookup(
 			ArrayUtils.readLong(memory, position, arrayHandle, memoryHandle),
 			length,
-			len -> {
-				int hash = 0;
-				long ll = len + position;
-				for (long j = position; j < ll; j++) {
-					hash = hash * 31 + (byte) byteHandle.get(memory, j);
-				}
-				return hash;
-			},
+			len -> ArrayUtils.hashCode(memory, position, len),
 			result -> {
 				final var encoded = MemorySegment.ofArray(result.encoded());
 				final var spliced = memory.asSlice(position, encoded.byteSize());
@@ -250,13 +238,21 @@ public final class EncodedStringMap {
 				continue;
 			}
 
+			if (debug) {
+				logger.trace("{} => {}", Long.toHexString(index), bucket);
+			}
+
 			final var lengths = bucket.lengths();
 			for (int j = 0; j < lengths.length && lengths[j] < length; j++) {
-				final int hash = lengthToHash.applyAsInt(j);
+				final int hash = lengthToHash.applyAsInt(lengths[j]);
 				final var results = bucket.results().get(hash);
 
 				if (results == null || results.isEmpty()) {
 					continue;
+				}
+
+				if (debug) {
+					logger.trace("{} -> {} (via {})", hash, results, lengthToHash);
 				}
 
 				for (final var result : results) {
@@ -300,7 +296,7 @@ public final class EncodedStringMap {
 			}
 		}
 
-		return Long2ObjectMaps.unmodifiable(results);
+		return results;
 	}
 
 	@CheckReturnValue
@@ -333,6 +329,22 @@ public final class EncodedStringMap {
 		return scan(memory.byteSize(), offset, span, limit, (position, length) -> lookup(memory, position, length));
 	}
 
+	@Override
+	public String toString() {
+		final StringBuilder builder = new StringBuilder(32 + this.backing.size() * 32).append("EncodedLookup {");
+		final var formatter = new Formatter(builder, Locale.ROOT);
+		final var itr = Long2ObjectMaps.fastIterator(this.backing);
+
+		while (itr.hasNext()) {
+			final var entry = itr.next();
+			formatter.format("\n\t%016x => %s", entry.getLongKey(), entry.getValue());
+		}
+
+		builder.append("\n}");
+
+		return builder.toString();
+	}
+
 	@FunctionalInterface
 	private interface ScanDriver<O> {
 		O apply(final long position, final int length);
@@ -350,7 +362,9 @@ public final class EncodedStringMap {
 		int[] lengths,
 		Int2ObjectMap<List<Result0>> results
 	) {
-		private static Bucket of(Int2ObjectMap<List<Result0>> results) {
+		private static Bucket of(Int2ObjectMap<? extends Map<?, Result0>> results) {
+			assert !results.isEmpty() : "results";
+
 			final var array = new int[results.size()];
 			final var hashToResults = new Int2ObjectOpenHashMap<List<Result0>>();
 
@@ -360,8 +374,8 @@ public final class EncodedStringMap {
 				while (itr.hasNext()) {
 					final var entry = itr.next();
 					array[index++] = entry.getIntKey();
-					final var list = entry.getValue();
-					for (final var result : list) {
+					final var map = entry.getValue();
+					for (final var result : map.values()) {
 						hashToResults.computeIfAbsent(result.hash(), $ -> new ArrayList<>()).add(result);
 					}
 				}
@@ -377,6 +391,8 @@ public final class EncodedStringMap {
 
 			Arrays.sort(array);
 
+			assert !hashToResults.isEmpty() : "hashToResults";
+
 			return new Bucket(array, hashToResults);
 		}
 
@@ -386,6 +402,28 @@ public final class EncodedStringMap {
 
 		public int max() {
 			return this.lengths[this.lengths.length - 1];
+		}
+
+		@Override
+		public String toString() {
+			final StringBuilder builder = new StringBuilder(32 + results.size() * 32)
+				.append("Bucket[")
+				.append(min())
+				.append("..")
+				.append(max())
+				.append("]{");
+
+			final var itr = Int2ObjectMaps.fastIterator(this.results);
+			while (itr.hasNext()) {
+				final var entry = itr.next();
+				builder.append("\n\t\t").append(entry.getIntKey()).append(" => [");
+				for (final var result : entry.getValue()) {
+					builder.append("\n\t\t\t").append(result);
+				}
+				builder.append("\n\t\t]");
+			}
+
+			return builder.toString();
 		}
 	}
 
@@ -398,6 +436,26 @@ public final class EncodedStringMap {
 		@Override
 		public int length() {
 			return encoded.length;
+		}
+
+		@Override
+		public String toString() {
+			return "Result[" + length() + "]{" + charset + " => " + value + "}";
+		}
+	}
+
+	private record Compute(String value, Charset charset) implements BiFunction<byte[], Result0, Result0> {
+		@Override
+		public Result0 apply(final byte[] bytes, final Result0 record0) {
+			if (
+				record0 != null && (
+					StringUtils.standardCharsets.contains(record0.charset) ||
+					!StringUtils.standardCharsets.contains(charset)
+				)
+			) {
+				return record0;
+			}
+			return new Result0(value, charset, bytes, ArrayUtils.hashCode(bytes));
 		}
 	}
 }

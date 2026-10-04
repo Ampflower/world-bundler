@@ -18,6 +18,8 @@ dependencies {
 	annotationProcessor(libs.bundles.codegen)
 
 	compileOnly(libs.bundles.compile)
+
+	testImplementation(libs.bundles.test)
 }
 
 application {
