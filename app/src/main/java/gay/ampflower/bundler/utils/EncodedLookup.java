@@ -41,7 +41,7 @@ import java.util.function.Predicate;
  * @since ${version}
  **/
 @NotNullByDefault
-public final class EncodedStringMap {
+public final class EncodedLookup {
 	private static final Logger logger = LogUtils.logger();
 	private static final boolean debug = SysProps.isDebuggee();
 
@@ -54,7 +54,7 @@ public final class EncodedStringMap {
 
 	private static final VarHandle byteHandle = ValueLayout.JAVA_BYTE.varHandle();
 
-	public static final EncodedStringMap NONE = new EncodedStringMap();
+	public static final EncodedLookup NONE = new EncodedLookup();
 
 	private static final long[] masks = {
 		0xFFFFFFFF_FFFFFFFFL,
@@ -79,12 +79,12 @@ public final class EncodedStringMap {
 	private final Long2ObjectMap<Bucket> backing;
 	private final int minLength;
 
-	private EncodedStringMap() {
+	private EncodedLookup() {
 		this.backing = Long2ObjectMaps.emptyMap();
 		this.minLength = Integer.MAX_VALUE;
 	}
 
-	public EncodedStringMap(
+	public EncodedLookup(
 		final @Nullable Collection<Charset> charsets,
 		final Collection<String> unprocessedStrings
 	) {

@@ -7,7 +7,7 @@ import gay.ampflower.bundler.compress.Compressor;
 import gay.ampflower.bundler.compress.CompressorRegistry;
 import gay.ampflower.bundler.data.ini.Ini;
 import gay.ampflower.bundler.recovery.Recovery;
-import gay.ampflower.bundler.utils.EncodedStringMap;
+import gay.ampflower.bundler.utils.EncodedLookup;
 import gay.ampflower.bundler.utils.Identifier;
 import gay.ampflower.bundler.utils.LevelConverter;
 import gay.ampflower.bundler.utils.LogUtils;
@@ -248,7 +248,7 @@ public final class App {
 	) throws Exception {
 		return OpaqueBlobScraper.call(
 			sectorSize,
-			find.isEmpty() ? EncodedStringMap.NONE : new EncodedStringMap(charsets, find),
+			find.isEmpty() ? EncodedLookup.NONE : new EncodedLookup(charsets, find),
 			paranoia,
 			output.toAbsolutePath().normalize(),
 			files

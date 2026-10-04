@@ -21,7 +21,7 @@ public class EncodedLookupTest {
 
 	@Test
 	public void terse() {
-		final var map = new EncodedStringMap(
+		final var map = new EncodedLookup(
 			List.of(StandardCharsets.UTF_8, StandardCharsets.UTF_16LE, StandardCharsets.UTF_16BE),
 			List.of(
 				"this",
@@ -69,7 +69,7 @@ public class EncodedLookupTest {
 	private void assertValidity(
 		final String charset,
 		final byte[] bytes,
-		final EncodedStringMap map
+		final EncodedLookup map
 	) {
 		logger.info("{} as byte[]", charset);
 		var a = assertResult(map.scan(bytes));
@@ -79,7 +79,7 @@ public class EncodedLookupTest {
 		assertEquals(a, b);
 	}
 
-	private Long2ObjectMap<EncodedStringMap.Result> assertResult(Long2ObjectMap<EncodedStringMap.Result> results) {
+	private Long2ObjectMap<EncodedLookup.Result> assertResult(Long2ObjectMap<EncodedLookup.Result> results) {
 		assertFalse(results.isEmpty(), "No results found within map");
 
 		final var itr = Long2ObjectMaps.fastIterator(results);

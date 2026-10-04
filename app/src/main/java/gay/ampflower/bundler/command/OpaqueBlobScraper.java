@@ -3,7 +3,7 @@ package gay.ampflower.bundler.command;
 import com.j256.simplemagic.ContentInfo;
 import gay.ampflower.bundler.compress.Compressor;
 import gay.ampflower.bundler.compress.CompressorRegistry;
-import gay.ampflower.bundler.utils.EncodedStringMap;
+import gay.ampflower.bundler.utils.EncodedLookup;
 import gay.ampflower.bundler.utils.LogUtils;
 import gay.ampflower.bundler.utils.MagicUtils;
 import gay.ampflower.bundler.utils.SizeUtils;
@@ -62,7 +62,7 @@ public final class OpaqueBlobScraper {
 
 	public static int call(
 		final int scrapeSectorSize,
-		final EncodedStringMap find,
+		final EncodedLookup find,
 		final boolean paranoia,
 		final Path output,
 		final List<Path> files
@@ -269,7 +269,7 @@ public final class OpaqueBlobScraper {
 		long dataSector,
 		// intentionally mutable
 		long emptySector,
-		final EncodedStringMap find,
+		final EncodedLookup find,
 		final boolean paranoia
 	) throws SQLException, IOException {
 
@@ -329,7 +329,7 @@ public final class OpaqueBlobScraper {
 			final Compressor compressor = Compressor.getFileCompressor(raw);
 			final String safeSample;
 			final ContentInfo mime;
-			final Long2ObjectMap<EncodedStringMap.Result> results;
+			final Long2ObjectMap<EncodedLookup.Result> results;
 
 			if (!compressor.isCompressor()) {
 				logger.trace("Not a compressor block at {}", position);
